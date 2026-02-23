@@ -1,3 +1,38 @@
+# PAL MCP Fork — @svenmeys
+
+> **This is a personal fork of [BeehiveInnovations/pal-mcp-server](https://github.com/BeehiveInnovations/pal-mcp-server).**
+
+## Why a fork, not a PR?
+
+I'm not going to be the guy who opens an AI-generated PR. There's enough noise already.
+
+Instead, I build in the open. If the upstream maintainers or anyone else sees changes they like, they're welcome to cherry-pick commits directly. Each commit is atomic and self-contained — grab what's useful, ignore the rest.
+
+### What's different here
+
+**Model configs kept current** — I actively update `conf/gemini_models.json`, `conf/openai_models.json`, and `conf/xai_models.json` as new models drop. Upstream configs tend to lag behind releases.
+
+**How to grab changes:**
+
+```bash
+# Add this fork as a remote
+git remote add svenmeys https://github.com/svenmeys/pal-mcp-server.git
+git fetch svenmeys
+
+# Cherry-pick specific commits
+git cherry-pick <commit-hash>
+
+# Or diff a specific file to see what changed
+git diff main..svenmeys/model-configs-feb-2026 -- conf/gemini_models.json
+```
+
+**Current branches:**
+- `model-configs-feb-2026` — Gemini 3.1 Pro, Gemini 3 Flash, Grok 4 Fast, Grok Code Fast, cleaned up OpenAI lineup
+
+All commits are co-authored with [@ticketron-ai](https://github.com/apps/ticketron-ai), because that's how we roll.
+
+---
+
 # PAL MCP: Many Workflows. One Context.
 
 <div align="center">
