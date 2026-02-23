@@ -25,7 +25,7 @@
   },
   "models": [
     {
-      "model_name": "grok-4",
+      "model_name": "grok-4-0709",
       "friendly_name": "X.AI (Grok 4)",
       "aliases": [
         "grok",
@@ -33,7 +33,7 @@
         "grok-4"
       ],
       "intelligence_score": 16,
-      "description": "GROK-4 (256K context) - Frontier multimodal reasoning model with advanced capabilities",
+      "description": "Grok 4 (256K context) - Frontier multimodal reasoning model, structured generation and document Q&A",
       "context_window": 256000,
       "max_output_tokens": 256000,
       "supports_extended_thinking": true,
@@ -56,7 +56,7 @@
         "grok-4.1-fast"
       ],
       "intelligence_score": 15,
-      "description": "GROK-4.1 Fast Reasoning (2M context) - High-performance multimodal reasoning model with function calling",
+      "description": "Grok 4.1 Fast Reasoning (2M context) - High-performance multimodal reasoning with function calling",
       "context_window": 2000000,
       "max_output_tokens": 2000000,
       "supports_extended_thinking": true,
@@ -67,6 +67,65 @@
       "supports_images": true,
       "supports_temperature": true,
       "max_image_size_mb": 20.0
+    },
+    {
+      "model_name": "grok-4-fast-reasoning",
+      "friendly_name": "X.AI (Grok 4 Fast Reasoning)",
+      "aliases": [
+        "grok-fast",
+        "grok4-fast"
+      ],
+      "intelligence_score": 14,
+      "description": "Grok 4 Fast with reasoning (2M context, $0.20/M in) - Cheap reasoning at speed",
+      "context_window": 2000000,
+      "max_output_tokens": 2000000,
+      "supports_extended_thinking": true,
+      "supports_system_prompts": true,
+      "supports_streaming": true,
+      "supports_function_calling": true,
+      "supports_json_mode": true,
+      "supports_images": true,
+      "supports_temperature": true,
+      "max_image_size_mb": 20.0
+    },
+    {
+      "model_name": "grok-4-fast-non-reasoning",
+      "friendly_name": "X.AI (Grok 4 Fast)",
+      "aliases": [
+        "grok-instant",
+        "grok4-instant"
+      ],
+      "intelligence_score": 12,
+      "description": "Grok 4 Fast without reasoning (2M context, $0.20/M in) - Instant responses, no thinking overhead",
+      "context_window": 2000000,
+      "max_output_tokens": 2000000,
+      "supports_extended_thinking": false,
+      "supports_system_prompts": true,
+      "supports_streaming": true,
+      "supports_function_calling": true,
+      "supports_json_mode": true,
+      "supports_images": true,
+      "supports_temperature": true,
+      "max_image_size_mb": 20.0
+    },
+    {
+      "model_name": "grok-code-fast-1",
+      "friendly_name": "X.AI (Grok Code Fast)",
+      "aliases": [
+        "grok-code",
+        "grokcode"
+      ],
+      "intelligence_score": 13,
+      "description": "Grok Code Fast (256K context, $0.20/M in) - Agentic coding specialist, multi-step edits, text-only",
+      "context_window": 256000,
+      "max_output_tokens": 256000,
+      "supports_extended_thinking": true,
+      "supports_system_prompts": true,
+      "supports_streaming": true,
+      "supports_function_calling": true,
+      "supports_json_mode": true,
+      "supports_images": false,
+      "supports_temperature": true
     }
   ]
 }
