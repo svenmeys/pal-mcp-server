@@ -25,12 +25,78 @@
   },
   "models": [
     {
+      "model_name": "grok-4.20-0309-reasoning",
+      "friendly_name": "X.AI (Grok 4.20 Reasoning)",
+      "aliases": [
+        "grok-4.20",
+        "grok-4.20-reasoning",
+        "grok-4-20",
+        "grok-4-20-reasoning",
+        "grok420"
+      ],
+      "intelligence_score": 17,
+      "description": "Grok 4.20 Reasoning (2M context) - xAI flagship, improved instruction-following + fewer hallucinations over 4.1",
+      "context_window": 2000000,
+      "max_output_tokens": 2000000,
+      "supports_extended_thinking": true,
+      "supports_system_prompts": true,
+      "supports_streaming": true,
+      "supports_function_calling": true,
+      "supports_json_mode": true,
+      "supports_images": true,
+      "supports_temperature": true,
+      "max_image_size_mb": 20.0
+    },
+    {
+      "model_name": "grok-4.20-0309-non-reasoning",
+      "friendly_name": "X.AI (Grok 4.20 Non-Reasoning)",
+      "aliases": [
+        "grok-4.20-non-reasoning",
+        "grok-4.20-instant",
+        "grok-4-20-non-reasoning"
+      ],
+      "intelligence_score": 14,
+      "description": "Grok 4.20 Non-Reasoning (2M context) - Instant responses, no thinking overhead, newer than 4-fast",
+      "context_window": 2000000,
+      "max_output_tokens": 2000000,
+      "supports_extended_thinking": false,
+      "supports_system_prompts": true,
+      "supports_streaming": true,
+      "supports_function_calling": true,
+      "supports_json_mode": true,
+      "supports_images": true,
+      "supports_temperature": true,
+      "max_image_size_mb": 20.0
+    },
+    {
+      "model_name": "grok-4.20-multi-agent-0309",
+      "friendly_name": "X.AI (Grok 4.20 Multi-Agent)",
+      "aliases": [
+        "grok-4.20-multi-agent",
+        "grok-multi-agent",
+        "grok-4-20-multi-agent"
+      ],
+      "intelligence_score": 16,
+      "description": "Grok 4.20 Multi-Agent (2M context) - Multi-agent orchestration variant of Grok 4.20",
+      "context_window": 2000000,
+      "max_output_tokens": 2000000,
+      "supports_extended_thinking": true,
+      "supports_system_prompts": true,
+      "supports_streaming": true,
+      "supports_function_calling": true,
+      "supports_json_mode": true,
+      "supports_images": true,
+      "supports_temperature": true,
+      "max_image_size_mb": 20.0
+    },
+    {
       "model_name": "grok-4-0709",
       "friendly_name": "X.AI (Grok 4)",
       "aliases": [
         "grok",
         "grok4",
-        "grok-4"
+        "grok-4",
+        "grok-4-0709"
       ],
       "intelligence_score": 16,
       "description": "Grok 4 (256K context) - Frontier multimodal reasoning model, structured generation and document Q&A",
