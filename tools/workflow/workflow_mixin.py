@@ -237,6 +237,80 @@ class BaseWorkflowMixin(ABC):
         """
         return "high"
 
+    # Model-prefix to CLI-client mapping.  Checked in order; first match wins.
+    _MODEL_TO_CLI: list[tuple[list[str], str]] = [
+        (["gpt", "o3", "o4", "codex"], "codex"),
+        (["claude"], "claude"),
+        (["gemini"], "gemini"),
+    ]
+
+    # When the requested model doesn't match any prefix above, fall back here.
+    _DEFAULT_CLI: str = "claude"
+
+    @classmethod
+    def _clink_client_names(cls) -> set[str]:
+        """CLI client names this tool can route to.
+
+        Unions the routing map (so detection stays robust when the clink registry
+        is patched in tests) with the live registry (so a client added to clink —
+        e.g. a 4th CLI — is recognized here too, keeping this in sync with the
+        server-boundary bypass that consults the same registry).
+        """
+        names = {cli for _, cli in cls._MODEL_TO_CLI} | {cls._DEFAULT_CLI}
+        try:
+            from clink import get_registry
+
+            names |= set(get_registry().list_clients())
+        except Exception:
+            pass
+        return names
+
+    def get_expert_analysis_cli_name(self, request: Any) -> Optional[str]:
+        """
+        Resolve the CLI client for expert analysis from the requested model name.
+
+        Concrete, available models are routed through clink CLIs by prefix.
+        Returns ``None`` for ``auto`` or unavailable models so that normal model
+        validation can surface the proper "model not available" error instead of
+        silently falling back to a CLI.
+        Override in subclasses only if you need custom routing.
+        """
+        model_name = (self.get_request_model_name(request) or "").lower()
+
+        # An explicit clink client name routes directly to that CLI. This check
+        # intentionally precedes the provider lookup: a bare client name (codex/
+        # claude/gemini) is a CLI route, not a provider model, so it must win.
+        if model_name in self._clink_client_names():
+            return model_name
+
+        # "auto" outside auto-mode, or a model with no available provider, is not
+        # a valid selection — don't route it; let validation report the error.
+        from providers.registry import ModelProviderRegistry
+
+        if model_name in ("", "auto") or ModelProviderRegistry.get_provider_for_model(model_name) is None:
+            return None
+
+        for prefixes, cli in self._MODEL_TO_CLI:
+            if any(model_name.startswith(p) for p in prefixes):
+                return cli
+
+        return self._DEFAULT_CLI
+
+    def get_expert_analysis_cli_role(self, request: Any) -> str:
+        """
+        Return the CLI role to use for expert analysis.
+
+        Only used when get_expert_analysis_cli_name() returns a client name.
+        """
+        return "default"
+
+    def get_expert_analysis_cli_file_budget(self, request: Any) -> Optional[int]:
+        """
+        Return a conservative max token budget for file embedding when expert analysis
+        uses a CLI without a provider-backed model context.
+        """
+        return 100_000
+
     def get_request_temperature(self, request) -> float:
         """Get temperature from request. Override for custom temperature handling."""
         try:
@@ -520,9 +594,12 @@ class BaseWorkflowMixin(ABC):
             return
 
         try:
+            cli_name = self.get_expert_analysis_cli_name(request)
+            cli_file_budget = self.get_expert_analysis_cli_file_budget(request) if cli_name else None
+
             # Model context should be available from early validation, but might be deferred for tests
             current_model_context = self.get_current_model_context()
-            if not current_model_context:
+            if not current_model_context and not cli_name:
                 # Try to resolve model context now (deferred from early validation)
                 try:
                     model_name, model_context = self._resolve_model_context(arguments, request)
@@ -536,6 +613,9 @@ class BaseWorkflowMixin(ABC):
                     model_name = self.get_request_model_name(request)
                     self._model_context = ModelContext(model_name)
                     self._current_model_name = model_name
+            elif cli_name:
+                # CLI-backed expert analysis does not have a provider model context.
+                self._current_model_name = self.get_request_model_name(request)
 
             # Use the same file preparation logic as BaseTool with token budgeting
             continuation_id = self.get_request_continuation_id(request)
@@ -545,6 +625,7 @@ class BaseWorkflowMixin(ABC):
                 request_files,
                 continuation_id,
                 "Workflow files for analysis",
+                max_tokens=cli_file_budget,
                 remaining_budget=remaining_tokens,
                 arguments=arguments,
                 model_context=self._model_context,
@@ -695,7 +776,11 @@ class BaseWorkflowMixin(ABC):
 
             # Create thread for first step
             if not continuation_id and request.step_number == 1:
-                clean_args = {k: v for k, v in arguments.items() if k not in ["_model_context", "_resolved_model_name"]}
+                clean_args = {
+                    k: v
+                    for k, v in arguments.items()
+                    if k not in ["_model_context", "_resolved_model_name", "_workflow_provider_name"]
+                }
                 continuation_id = create_thread(self.get_name(), clean_args)
                 self.initial_request = request.step
                 # Allow tools to store initial description for expert analysis
@@ -1148,6 +1233,7 @@ class BaseWorkflowMixin(ABC):
             # Get model information from arguments (set by server.py)
             resolved_model_name = arguments.get("_resolved_model_name")
             model_context = arguments.get("_model_context")
+            workflow_provider_name = arguments.get("_workflow_provider_name")
 
             if resolved_model_name and model_context:
                 # Extract provider information from model context
@@ -1169,6 +1255,21 @@ class BaseWorkflowMixin(ABC):
                 logger.debug(
                     f"[WORKFLOW_METADATA] {self.get_name()}: Added metadata - "
                     f"model: {resolved_model_name}, provider: {provider_name}"
+                )
+            elif resolved_model_name and workflow_provider_name:
+                metadata = {
+                    "tool_name": self.get_name(),
+                    "model_used": resolved_model_name,
+                    "provider_used": workflow_provider_name,
+                }
+
+                if "metadata" not in response_data:
+                    response_data["metadata"] = {}
+                response_data["metadata"].update(metadata)
+
+                logger.debug(
+                    f"[WORKFLOW_METADATA] {self.get_name()}: Added CLI metadata - "
+                    f"model: {resolved_model_name}, provider: {workflow_provider_name}"
                 )
             else:
                 # Fallback - try to get model info from request
@@ -1434,10 +1535,125 @@ class BaseWorkflowMixin(ABC):
 
         return "\n".join(summary_parts)
 
-    async def _call_expert_analysis(self, arguments: dict, request) -> dict:
-        """Call external model for expert analysis"""
+    def _build_expert_analysis_prompt(self) -> tuple[str, str]:
+        """Prepare prompt and system prompt for expert analysis."""
+        expert_context = self.prepare_expert_analysis_context(self.consolidated_findings)
+
+        if self.should_include_files_in_expert_prompt():
+            file_content = self._prepare_files_for_expert_analysis()
+            if file_content:
+                expert_context = self._add_files_to_expert_context(expert_context, file_content)
+
+        base_system_prompt = self.get_system_prompt()
+        capabilities = getattr(self._model_context, "capabilities", None) if self._model_context else None
+        capability_augmented_prompt = self._augment_system_prompt_with_capabilities(base_system_prompt, capabilities)
+        language_instruction = self.get_language_instruction()
+        system_prompt = language_instruction + capability_augmented_prompt
+
+        if self.should_embed_system_prompt():
+            prompt = f"{system_prompt}\n\n{expert_context}\n\n{self.get_expert_analysis_instruction()}"
+            system_prompt = ""
+        else:
+            prompt = expert_context
+
+        return prompt, system_prompt
+
+    def _parse_expert_analysis_content(self, content: str) -> dict:
+        """Parse expert analysis output as JSON when available, otherwise return plain text."""
+        normalized_content = content.strip()
+
+        if "```json" in normalized_content or "```" in normalized_content:
+            json_match = re.search(r"```(?:json)?\s*(.*?)\s*```", normalized_content, re.DOTALL)
+            if json_match:
+                normalized_content = json_match.group(1).strip()
+
         try:
-            # Model context should be resolved from early validation, but handle fallback for tests
+            return json.loads(normalized_content)
+        except json.JSONDecodeError as exc:
+            logger.info(
+                f"[{self.get_name()}] Expert analysis returned non-JSON response (this is OK for smaller models). "
+                f"Parse error: {str(exc)}. Response length: {len(content)} chars."
+            )
+            logger.debug(f"First 500 chars of response: {content[:500]!r}")
+            return {
+                "status": "analysis_complete",
+                "raw_analysis": content,
+                "format": "text",
+                "note": "Analysis provided in plain text format",
+            }
+
+    async def _call_cli_expert_analysis(
+        self,
+        arguments: dict[str, Any],
+        request: Any,
+        *,
+        cli_name: str,
+        prompt: str,
+        system_prompt: str,
+    ) -> dict:
+        """Run expert analysis through a configured CLI client."""
+        from clink import get_registry
+        from clink.agents import CLIAgentError, create_agent
+
+        try:
+            registry = get_registry()
+            client_config = registry.get_client(cli_name)
+            role_config = client_config.get_role(self.get_expert_analysis_cli_role(request))
+            role_prompt = role_config.prompt_path.read_text(encoding="utf-8").strip()
+
+            combined_system_prompt = "\n\n".join(
+                item.strip() for item in [role_prompt, system_prompt] if item and item.strip()
+            )
+
+            agent = create_agent(client_config)
+            result = await agent.run(
+                role=role_config,
+                prompt=prompt,
+                system_prompt=combined_system_prompt or None,
+                files=self.get_actually_processed_files(),
+                images=list(set(self.consolidated_findings.images)) if self.consolidated_findings.images else [],
+            )
+        except (KeyError, OSError, CLIAgentError) as exc:
+            logger.error(f"Error calling CLI expert analysis via {cli_name}: {exc}", exc_info=True)
+            return {"error": str(exc), "status": "analysis_error"}
+
+        arguments["_workflow_provider_name"] = client_config.name
+        cli_model_name = result.parsed.metadata.get("model_used") if result.parsed.metadata else None
+        if cli_model_name:
+            arguments["_resolved_model_name"] = cli_model_name
+        else:
+            arguments.setdefault("_resolved_model_name", self.get_request_model_name(request))
+
+        if result.parsed.content:
+            return self._parse_expert_analysis_content(result.parsed.content)
+
+        return {"error": f"No response from CLI '{cli_name}'", "status": "empty_response"}
+
+    async def _call_expert_analysis(self, arguments: dict, request) -> dict:
+        """Route expert analysis through a clink CLI.
+
+        All models are mapped to CLI clients (codex, claude, gemini) via
+        ``get_expert_analysis_cli_name``.  The direct-API path below is kept
+        only as a last-resort fallback for subclasses that explicitly return
+        ``None`` from the override.
+        """
+        try:
+            cli_name = self.get_expert_analysis_cli_name(request)
+            if cli_name:
+                prompt, system_prompt = self._build_expert_analysis_prompt()
+                return await self._call_cli_expert_analysis(
+                    arguments,
+                    request,
+                    cli_name=cli_name,
+                    prompt=prompt,
+                    system_prompt=system_prompt,
+                )
+
+            # Fallback: direct API (should not normally be reached)
+            logger.warning(
+                "get_expert_analysis_cli_name returned None — falling back to direct API. "
+                "This path is deprecated; configure a CLI client instead."
+            )
             if not self._model_context:
                 # Try to resolve model context for expert analysis (deferred from early validation)
                 try:
@@ -1457,30 +1673,7 @@ class BaseWorkflowMixin(ABC):
                 model_name = self._current_model_name
 
             provider = self._model_context.provider
-
-            # Prepare expert analysis context
-            expert_context = self.prepare_expert_analysis_context(self.consolidated_findings)
-
-            # Check if tool wants to include files in prompt
-            if self.should_include_files_in_expert_prompt():
-                file_content = self._prepare_files_for_expert_analysis()
-                if file_content:
-                    expert_context = self._add_files_to_expert_context(expert_context, file_content)
-
-            # Get system prompt for this tool with localization support
-            base_system_prompt = self.get_system_prompt()
-            capability_augmented_prompt = self._augment_system_prompt_with_capabilities(
-                base_system_prompt, getattr(self._model_context, "capabilities", None)
-            )
-            language_instruction = self.get_language_instruction()
-            system_prompt = language_instruction + capability_augmented_prompt
-
-            # Check if tool wants system prompt embedded in main prompt
-            if self.should_embed_system_prompt():
-                prompt = f"{system_prompt}\n\n{expert_context}\n\n{self.get_expert_analysis_instruction()}"
-                system_prompt = ""  # Clear it since we embedded it
-            else:
-                prompt = expert_context
+            prompt, system_prompt = self._build_expert_analysis_prompt()
 
             # Validate temperature against model constraints
             validated_temperature, temp_warnings = self.get_validated_temperature(request, self._model_context)
@@ -1500,33 +1693,7 @@ class BaseWorkflowMixin(ABC):
             )
 
             if model_response.content:
-                content = model_response.content.strip()
-
-                # Try to extract JSON from markdown code blocks if present
-                if "```json" in content or "```" in content:
-                    json_match = re.search(r"```(?:json)?\s*(.*?)\s*```", content, re.DOTALL)
-                    if json_match:
-                        content = json_match.group(1).strip()
-
-                try:
-                    # Try to parse as JSON
-                    analysis_result = json.loads(content)
-                    return analysis_result
-                except json.JSONDecodeError as e:
-                    # Log the parse error with more details but don't fail
-                    logger.info(
-                        f"[{self.get_name()}] Expert analysis returned non-JSON response (this is OK for smaller models). "
-                        f"Parse error: {str(e)}. Response length: {len(model_response.content)} chars."
-                    )
-                    logger.debug(f"First 500 chars of response: {model_response.content[:500]!r}")
-
-                    # Still return the analysis as plain text - this is valid
-                    return {
-                        "status": "analysis_complete",
-                        "raw_analysis": model_response.content,
-                        "format": "text",  # Indicate it's plain text, not an error
-                        "note": "Analysis provided in plain text format",
-                    }
+                return self._parse_expert_analysis_content(model_response.content)
             else:
                 return {"error": "No response from model", "status": "empty_response"}
 

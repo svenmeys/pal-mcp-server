@@ -152,6 +152,10 @@ class CodeReviewTool(WorkflowTool):
 
         return ToolModelCategory.EXTENDED_REASONING
 
+    def get_expert_analysis_cli_role(self, request: Any) -> str:
+        """Use the dedicated code review role for CLI-backed reviews."""
+        return "codereviewer"
+
     def get_workflow_request_model(self):
         """Return the code review workflow-specific request model."""
         return CodeReviewRequest

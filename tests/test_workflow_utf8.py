@@ -6,11 +6,64 @@ and the generation of properly encoded JSON responses.
 import json
 import os
 import unittest
-from unittest.mock import AsyncMock, Mock, patch
+from pathlib import Path
+from unittest.mock import patch
 
+from clink.agents import AgentOutput
+from clink.models import ResolvedCLIClient, ResolvedCLIRole
+from clink.parsers.base import ParsedCLIResponse
 from tools.analyze import AnalyzeTool
 from tools.codereview import CodeReviewTool
 from tools.debug import DebugIssueTool
+
+
+def _make_cli_mocks(content: str, captured: dict, *, role_name: str = "default"):
+    """Build fake clink registry + agent so expert analysis returns ``content`` hermetically.
+
+    Expert analysis now routes through a clink CLI instead of a provider's
+    generate_content. These return a fake registry getter and create_agent that
+    yield the given content without spawning a real CLI subprocess. ``captured``
+    records the kwargs passed to ``agent.run``.
+
+    Returns (get_registry_fn, create_agent_fn) suitable for patching.
+    """
+    prompt_path = Path("systemprompts/clink/codex_codereviewer.txt").resolve()
+    role = ResolvedCLIRole(name=role_name, prompt_path=prompt_path, role_args=[])
+    client = ResolvedCLIClient(
+        name="claude",
+        executable=["claude"],
+        working_dir=None,
+        internal_args=[],
+        config_args=[],
+        env={},
+        timeout_seconds=30,
+        parser="codex_jsonl",
+        runner="codex",
+        roles={role_name: role},
+    )
+
+    class DummyRegistry:
+        def get_client(self, cli_name: str):
+            return client
+
+        def list_clients(self):
+            return ["claude", "codex", "gemini"]
+
+    class DummyAgent:
+        async def run(self, **kwargs):
+            captured.update(kwargs)
+            return AgentOutput(
+                parsed=ParsedCLIResponse(content=content, metadata={"model_used": "test-model"}),
+                sanitized_command=["claude"],
+                returncode=0,
+                stdout="{}",
+                stderr="",
+                duration_seconds=0.1,
+                parser_name="codex_jsonl",
+                output_file_content=None,
+            )
+
+    return (lambda: DummyRegistry()), (lambda resolved_client: DummyAgent())
 
 
 class TestWorkflowToolsUTF8(unittest.IsolatedAsyncioTestCase):
@@ -58,57 +111,38 @@ class TestWorkflowToolsUTF8(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(parsed["findings"], test_response["findings"])
         self.assertEqual(len(parsed["issues_found"]), 1)
 
-    @patch("tools.shared.base_tool.BaseTool.get_model_provider")
-    @patch("utils.model_context.ModelContext")
-    async def test_analyze_tool_utf8_response(self, mock_model_context, mock_get_provider):
-        """Test that the analyze tool returns correct UTF-8 responses."""
+    async def test_analyze_tool_utf8_response(self):
+        """Test that the analyze tool returns correct UTF-8 responses.
 
-        # Mock ModelContext to bypass model validation
-        mock_context_instance = Mock()
-
-        # Mock token allocation for file processing
-        mock_token_allocation = Mock()
-        mock_token_allocation.file_tokens = 1000
-        mock_token_allocation.total_tokens = 2000
-        mock_context_instance.calculate_token_allocation.return_value = mock_token_allocation
-
-        # Mock provider with more complete setup (same as codereview test)
-        mock_provider = Mock()
-        mock_provider.get_provider_type.return_value = Mock(value="test")
-        mock_provider.get_capabilities.return_value = Mock(supports_extended_thinking=False)
-        mock_provider.generate_content = AsyncMock(
-            return_value=Mock(
-                content=json.dumps(
-                    {
-                        "status": "analysis_complete",
-                        "raw_analysis": "Analysis completed successfully",
-                    },
-                    ensure_ascii=False,
-                ),
-                usage={},
-                model_name="flash",
-                metadata={},
-            )
-        )
-        # Use the same provider for both contexts
-        mock_get_provider.return_value = mock_provider
-        mock_context_instance.provider = mock_provider
-        mock_context_instance.capabilities = Mock(supports_extended_thinking=False)
-        mock_model_context.return_value = mock_context_instance
-
-        # Test the tool
-        analyze_tool = AnalyzeTool()
-        result = await analyze_tool.execute(
+        Expert analysis now routes through a clink CLI, so we mock the CLI agent
+        and assert the (UTF-8) content flows through unchanged.
+        """
+        content = json.dumps(
             {
-                "step": "Analyze system architecture to identify issues",
-                "step_number": 1,
-                "total_steps": 1,
-                "next_step_required": False,
-                "findings": "Starting architectural analysis of Python code",
-                "relevant_files": ["/test/main.py"],
-                "model": "flash",
-            }
+                "status": "analysis_complete",
+                "raw_analysis": "Analysis completed successfully 🔍",
+            },
+            ensure_ascii=False,
         )
+        captured = {}
+        get_registry_fn, create_agent_fn = _make_cli_mocks(content, captured)
+
+        with (
+            patch("clink.get_registry", get_registry_fn),
+            patch("clink.agents.create_agent", create_agent_fn),
+        ):
+            analyze_tool = AnalyzeTool()
+            result = await analyze_tool.execute(
+                {
+                    "step": "Analyze system architecture to identify issues",
+                    "step_number": 1,
+                    "total_steps": 1,
+                    "next_step_required": False,
+                    "findings": "Starting architectural analysis of Python code",
+                    "relevant_files": ["/test/main.py"],
+                    "model": "flash",
+                }
+            )
 
         # Checks
         self.assertIsNotNone(result)
@@ -121,24 +155,17 @@ class TestWorkflowToolsUTF8(unittest.IsolatedAsyncioTestCase):
         # Structure checks
         self.assertIn("status", response_data)
 
-        # Check that the French instruction was added
-        # The mock provider's generate_content should be called
-        mock_provider.generate_content.assert_called()
-        # The call was successful, which means our fix worked
+        # The CLI agent should have been invoked for expert analysis
+        self.assertTrue(captured, "Expected expert analysis to route through the CLI agent")
+        # UTF-8 content preserved end to end
+        self.assertIn("🔍", response_data["expert_analysis"]["raw_analysis"])
 
-    @patch("tools.shared.base_tool.BaseTool.get_model_provider")
-    async def test_codereview_tool_french_findings(self, mock_get_provider):
+    async def test_codereview_tool_french_findings(self):
         """Test that the codereview tool produces findings in French."""
-        # Mock with analysis in French
-        mock_provider = Mock()
-        mock_provider.get_provider_type.return_value = Mock(value="test")
-        mock_provider.get_capabilities.return_value = Mock(supports_extended_thinking=False)
-        mock_provider.generate_content = AsyncMock(
-            return_value=Mock(
-                content=json.dumps(
-                    {
-                        "status": "analysis_complete",
-                        "raw_analysis": """
+        content = json.dumps(
+            {
+                "status": "analysis_complete",
+                "raw_analysis": """
 🔴 CRITIQUE: Aucun problème critique trouvé.
 
 🟠 ÉLEVÉ: Fichier example.py:42 - Fonction trop complexe
@@ -154,101 +181,84 @@ class TestWorkflowToolsUTF8(unittest.IsolatedAsyncioTestCase):
 • Nomenclature cohérente
 • Tests unitaires présents
 """,
-                    },
-                    ensure_ascii=False,
-                ),
-                usage={},
-                model_name="test-model",
-                metadata={},
-            )
+            },
+            ensure_ascii=False,
         )
-        mock_get_provider.return_value = mock_provider
+        captured = {}
+        get_registry_fn, create_agent_fn = _make_cli_mocks(content, captured, role_name="codereviewer")
 
-        # Test the tool
-        codereview_tool = CodeReviewTool()
-        result = await codereview_tool.execute(
-            {
-                "step": "Complete review of Python code",
-                "step_number": 1,
-                "total_steps": 1,
-                "next_step_required": False,
-                "findings": "Code review complete",
-                "relevant_files": ["/test/example.py"],
-                "model": "test-model",
-            }
-        )
+        with (
+            patch("clink.get_registry", get_registry_fn),
+            patch("clink.agents.create_agent", create_agent_fn),
+        ):
+            codereview_tool = CodeReviewTool()
+            result = await codereview_tool.execute(
+                {
+                    "step": "Complete review of Python code",
+                    "step_number": 1,
+                    "total_steps": 1,
+                    "next_step_required": False,
+                    "findings": "Code review complete",
+                    "relevant_files": ["/test/example.py"],
+                    "model": "codex",
+                }
+            )
 
         # Checks
         self.assertIsNotNone(result)
         response_text = result[0].text
         response_data = json.loads(response_text)
 
-        # Check UTF-8 characters in analysis
-        if "expert_analysis" in response_data:
-            analysis = response_data["expert_analysis"]["raw_analysis"]
-            # Check for French characters
-            self.assertIn("ÉLEVÉ", analysis)
-            self.assertIn("problème", analysis)
-            self.assertIn("spécialisées", analysis)
-            self.assertIn("appropriée", analysis)
-            self.assertIn("paramètres", analysis)
-            self.assertIn("présents", analysis)
-            # Check for emojis
-            self.assertIn("🔴", analysis)
-            self.assertIn("🟠", analysis)
-            self.assertIn("🟡", analysis)
-            self.assertIn("✅", analysis)
+        # Expert analysis must be present and carry the French content
+        self.assertIn("expert_analysis", response_data)
+        analysis = response_data["expert_analysis"]["raw_analysis"]
+        # Check for French characters
+        self.assertIn("ÉLEVÉ", analysis)
+        self.assertIn("problème", analysis)
+        self.assertIn("spécialisées", analysis)
+        self.assertIn("appropriée", analysis)
+        self.assertIn("paramètres", analysis)
+        self.assertIn("présents", analysis)
+        # Check for emojis
+        self.assertIn("🔴", analysis)
+        self.assertIn("🟠", analysis)
+        self.assertIn("🟡", analysis)
+        self.assertIn("✅", analysis)
 
-    @patch("tools.shared.base_tool.BaseTool.get_model_provider")
-    async def test_debug_tool_french_error_analysis(self, mock_get_provider):
+    async def test_debug_tool_french_error_analysis(self):
         """Test that the debug tool analyzes errors in French."""
-        # Mock provider
-        mock_provider = Mock()
-        mock_provider.get_provider_type.return_value = Mock(value="test")
-        mock_provider.get_capabilities.return_value = Mock(supports_extended_thinking=False)
-        mock_provider.generate_content = AsyncMock(
-            return_value=Mock(
-                content=json.dumps(
-                    {
-                        "status": "pause_for_investigation",
-                        "step_number": 1,
-                        "total_steps": 2,
-                        "next_step_required": True,
-                        "findings": (
-                            "Erreur analysée: variable 'données' non définie. " "Cause probable: import manquant."
-                        ),
-                        "files_checked": ["/src/data_processor.py"],
-                        "relevant_files": ["/src/data_processor.py"],
-                        "hypothesis": ("Variable 'données' not defined - missing import"),
-                        "confidence": "medium",
-                        "investigation_status": "in_progress",
-                        "error_analysis": ("L'erreur concerne la variable 'données' qui " "n'est pas définie."),
-                    },
-                    ensure_ascii=False,
-                ),
-                usage={},
-                model_name="test-model",
-                metadata={},
-            )
-        )
-        mock_get_provider.return_value = mock_provider
-
-        # Test the debug tool
-        debug_tool = DebugIssueTool()
-        result = await debug_tool.execute(
+        content = json.dumps(
             {
-                "step": "Analyze NameError in data processing file",
-                "step_number": 1,
-                "total_steps": 1,
-                "next_step_required": False,
-                "findings": "Error detected during script execution",
-                "files_checked": ["/src/data_processor.py"],
-                "relevant_files": ["/src/data_processor.py"],
-                "hypothesis": ("Variable 'données' not defined - missing import"),
-                "confidence": "medium",
-                "model": "test-model",
-            }
+                "status": "analysis_complete",
+                "raw_analysis": (
+                    "L'erreur concerne la variable 'données' qui n'est pas définie. "
+                    "Cause probable: import manquant."
+                ),
+            },
+            ensure_ascii=False,
         )
+        captured = {}
+        get_registry_fn, create_agent_fn = _make_cli_mocks(content, captured)
+
+        with (
+            patch("clink.get_registry", get_registry_fn),
+            patch("clink.agents.create_agent", create_agent_fn),
+        ):
+            debug_tool = DebugIssueTool()
+            result = await debug_tool.execute(
+                {
+                    "step": "Analyze NameError in data processing file",
+                    "step_number": 1,
+                    "total_steps": 1,
+                    "next_step_required": False,
+                    "findings": "Error detected during script execution",
+                    "files_checked": ["/src/data_processor.py"],
+                    "relevant_files": ["/src/data_processor.py"],
+                    "hypothesis": ("Variable 'données' not defined - missing import"),
+                    "confidence": "medium",
+                    "model": "test-model",
+                }
+            )
 
         # Checks
         self.assertIsNotNone(result)
@@ -257,9 +267,8 @@ class TestWorkflowToolsUTF8(unittest.IsolatedAsyncioTestCase):
 
         # Check response structure
         self.assertIn("status", response_data)
-        self.assertIn("investigation_status", response_data)
 
-        # Check that UTF-8 characters are preserved
+        # Check that UTF-8 characters are preserved end to end
         response_str = json.dumps(response_data, ensure_ascii=False)
         self.assertIn("données", response_str)
 

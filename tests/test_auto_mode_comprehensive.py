@@ -80,9 +80,9 @@ class TestAutoModeComprehensive:
                     "OPENROUTER_API_KEY": None,
                 },
                 {
-                    "EXTENDED_REASONING": "gemini-3-pro-preview",  # Gemini 3 Pro Preview for deep thinking
-                    "FAST_RESPONSE": "gemini-2.5-flash",  # Flash for speed
-                    "BALANCED": "gemini-2.5-flash",  # Flash as balanced
+                    "EXTENDED_REASONING": "gemini-3.1-pro-preview",  # Gemini 3 Pro Preview for deep thinking
+                    "FAST_RESPONSE": "gemini-3-flash-preview",  # Flash for speed
+                    "BALANCED": "gemini-3-flash-preview",  # Flash as balanced
                 },
             ),
             # Only OpenAI API available
@@ -94,9 +94,9 @@ class TestAutoModeComprehensive:
                     "OPENROUTER_API_KEY": None,
                 },
                 {
-                    "EXTENDED_REASONING": "gpt-5.1-codex",  # GPT-5.1 Codex prioritized for coding tasks
-                    "FAST_RESPONSE": "gpt-5.2",  # Prefer gpt-5.2 for speed
-                    "BALANCED": "gpt-5.2",  # Prefer gpt-5.2 for balanced
+                    "EXTENDED_REASONING": "gpt-5.3-codex",  # Codex specialist preferred for extended reasoning
+                    "FAST_RESPONSE": "gpt-5",  # gpt-5 alias resolves to gpt-5.5
+                    "BALANCED": "gpt-5",  # gpt-5 alias resolves to gpt-5.5
                 },
             ),
             # Only X.AI API available
@@ -122,9 +122,9 @@ class TestAutoModeComprehensive:
                     "OPENROUTER_API_KEY": None,
                 },
                 {
-                    "EXTENDED_REASONING": "gemini-3-pro-preview",  # Gemini 3 Pro Preview comes first in priority
-                    "FAST_RESPONSE": "gemini-2.5-flash",  # Prefer flash for speed
-                    "BALANCED": "gemini-2.5-flash",  # Prefer flash for balanced
+                    "EXTENDED_REASONING": "gemini-3.1-pro-preview",  # Gemini 3 Pro Preview comes first in priority
+                    "FAST_RESPONSE": "gemini-3-flash-preview",  # Prefer flash for speed
+                    "BALANCED": "gemini-3-flash-preview",  # Prefer flash for balanced
                 },
             ),
             # All native APIs available - Google still comes first
@@ -136,9 +136,9 @@ class TestAutoModeComprehensive:
                     "OPENROUTER_API_KEY": None,
                 },
                 {
-                    "EXTENDED_REASONING": "gemini-3-pro-preview",  # Gemini 3 Pro Preview comes first in priority
-                    "FAST_RESPONSE": "gemini-2.5-flash",  # Prefer flash for speed
-                    "BALANCED": "gemini-2.5-flash",  # Prefer flash for balanced
+                    "EXTENDED_REASONING": "gemini-3.1-pro-preview",  # Gemini 3 Pro Preview comes first in priority
+                    "FAST_RESPONSE": "gemini-3-flash-preview",  # Prefer flash for speed
+                    "BALANCED": "gemini-3-flash-preview",  # Prefer flash for balanced
                 },
             ),
         ],
@@ -405,7 +405,7 @@ class TestAutoModeComprehensive:
             "XAI_API_KEY": None,
             "OPENROUTER_API_KEY": None,
             "DEFAULT_MODEL": "auto",
-            "OPENAI_ALLOWED_MODELS": "o4-mini",  # Restrict OpenAI to only o4-mini
+            "OPENAI_ALLOWED_MODELS": "o3-mini",  # Restrict OpenAI to only o3-mini
         }
 
         # Filter out None values to avoid patch.dict errors
@@ -434,11 +434,11 @@ class TestAutoModeComprehensive:
             available_models = ModelProviderRegistry.get_available_models(respect_restrictions=True)
 
             # Should include restricted OpenAI model
-            assert "o4-mini" in available_models
+            assert "o3-mini" in available_models
 
             # Should NOT include non-restricted OpenAI models
             assert "o3" not in available_models
-            assert "o3-mini" not in available_models
+            assert "o3-pro" not in available_models
 
             # Should still include all Gemini models (no restrictions)
             assert "gemini-2.5-flash" in available_models
@@ -479,7 +479,7 @@ class TestAutoModeComprehensive:
                 "google/gemini-2.5-flash",
                 "google/gemini-2.5-pro",
                 "openai/o3",
-                "openai/o4-mini",
+                "openai/o3-mini",
                 "anthropic/claude-opus-4",
             ]
 

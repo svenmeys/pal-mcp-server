@@ -184,10 +184,10 @@ class TestO3TemperatureParameterFixSimple:
 
         provider = OpenAIModelProvider(api_key="test-key")
 
-        # Test O3/O4 models that should NOT support temperature parameter
-        o3_o4_models = ["o3", "o3-mini", "o3-pro", "o4-mini"]
+        # Test O3 models that should NOT support temperature parameter
+        o3_models = ["o3", "o3-mini", "o3-pro"]
 
-        for model in o3_o4_models:
+        for model in o3_models:
             capabilities = provider.get_capabilities(model)
             assert hasattr(
                 capabilities, "supports_temperature"
@@ -195,7 +195,7 @@ class TestO3TemperatureParameterFixSimple:
             assert capabilities.supports_temperature is False, f"Model {model} should have supports_temperature=False"
 
         # Test that regular models DO support temperature parameter
-        regular_models = ["gpt-4.1-2025-04-14"]
+        regular_models = ["gpt-5.3-chat-latest"]
 
         for model in regular_models:
             try:
@@ -229,11 +229,12 @@ class TestO3TemperatureParameterFixSimple:
         assert temp_constraint.validate(1.0) is True
         assert temp_constraint.validate(0.5) is False
 
-        # Test regular model constraints - use gpt-4.1 which is supported
-        gpt41_capabilities = provider.get_capabilities("gpt-4.1")
-        assert gpt41_capabilities.temperature_constraint is not None
+        # Test regular (non-O3) chat model constraints - gpt-5.3-chat-latest is supported.
+        # NOTE: the refreshed catalog pins every OpenAI model to a fixed temperature of 1.0,
+        # so even chat models now reject non-1.0 values.
+        chat_capabilities = provider.get_capabilities("gpt-5.3-chat-latest")
+        assert chat_capabilities.temperature_constraint is not None
 
-        # Regular models should allow a range
-        temp_constraint = gpt41_capabilities.temperature_constraint
-        assert temp_constraint.validate(0.5) is True
+        temp_constraint = chat_capabilities.temperature_constraint
         assert temp_constraint.validate(1.0) is True
+        assert temp_constraint.validate(0.5) is False

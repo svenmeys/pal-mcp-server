@@ -689,6 +689,20 @@ async def handle_list_tools() -> list[Tool]:
     return tools
 
 
+def _is_cli_routed_model(model_name: str) -> bool:
+    """Return True when model_name is a clink CLI client (codex/claude/gemini).
+
+    These names route through an external CLI rather than a provider API, so they
+    must bypass provider/model-context validation at the MCP boundary.
+    """
+    try:
+        from clink import get_registry
+
+        return model_name.lower() in set(get_registry().list_clients())
+    except Exception:
+        return False
+
+
 @server.call_tool()
 async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
     """
@@ -818,6 +832,21 @@ async def handle_call_tool(name: str, arguments: dict[str, Any]) -> list[TextCon
             model_name = resolved_model
             # Update arguments with resolved model
             arguments["model"] = model_name
+
+        # CLI-routed models (clink clients: codex/claude/gemini) bypass provider
+        # validation — the external CLI manages its own model and context window.
+        # Scoped to tools that actually understand CLI routing (workflow tools that
+        # expose get_expert_analysis_cli_name); a simple tool given a CLI name still
+        # gets the normal "model not available" error instead of failing deep.
+        # NOTE: provider restriction policies (e.g. OPENAI_ALLOWED_MODELS) do not
+        # apply to CLI-routed clients — clink is a separate invocation mechanism.
+        if _is_cli_routed_model(model_name) and hasattr(tool, "get_expert_analysis_cli_name"):
+            arguments["_resolved_model_name"] = model_name
+            arguments["_workflow_provider_name"] = model_name
+            logger.info(f"Model '{model_name}' is CLI-routed (clink); skipping provider validation.")
+            result = await tool.execute(arguments)
+            logger.info(f"Tool '{name}' execution completed (CLI-routed)")
+            return result
 
         # Validate model availability at MCP boundary
         provider = ModelProviderRegistry.get_provider_for_model(model_name)

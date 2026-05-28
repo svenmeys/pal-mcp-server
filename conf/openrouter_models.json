@@ -25,10 +25,10 @@
   },
   "models": [
     {
-      "model_name": "anthropic/claude-opus-4.5",
+      "model_name": "anthropic/claude-opus-4.6",
       "aliases": [
         "opus",
-        "opus4.5",
+        "opus4.6",
         "claude-opus"
       ],
       "context_window": 200000,
@@ -38,13 +38,43 @@
       "supports_function_calling": false,
       "supports_images": true,
       "max_image_size_mb": 5.0,
-      "description": "Claude Opus 4.5 - Anthropic's frontier reasoning model for complex software engineering and agentic workflows",
+      "description": "Claude Opus 4.6 - Anthropic's latest frontier reasoning model for complex software engineering and agentic workflows",
+      "intelligence_score": 19
+    },
+    {
+      "model_name": "anthropic/claude-sonnet-4.6",
+      "aliases": [
+        "sonnet",
+        "sonnet4.6"
+      ],
+      "context_window": 200000,
+      "max_output_tokens": 64000,
+      "supports_extended_thinking": false,
+      "supports_json_mode": false,
+      "supports_function_calling": false,
+      "supports_images": true,
+      "max_image_size_mb": 5.0,
+      "description": "Claude Sonnet 4.6 - Current high-performance Claude model with strong reasoning and efficiency",
+      "intelligence_score": 13
+    },
+    {
+      "model_name": "anthropic/claude-opus-4.5",
+      "aliases": [
+        "opus4.5"
+      ],
+      "context_window": 200000,
+      "max_output_tokens": 64000,
+      "supports_extended_thinking": false,
+      "supports_json_mode": false,
+      "supports_function_calling": false,
+      "supports_images": true,
+      "max_image_size_mb": 5.0,
+      "description": "Claude Opus 4.5 - Previous frontier reasoning model with strong software engineering performance",
       "intelligence_score": 18
     },
     {
       "model_name": "anthropic/claude-sonnet-4.5",
       "aliases": [
-        "sonnet",
         "sonnet4.5"
       ],
       "context_window": 200000,
@@ -54,7 +84,7 @@
       "supports_function_calling": false,
       "supports_images": true,
       "max_image_size_mb": 5.0,
-      "description": "Claude Sonnet 4.5 - High-performance model with exceptional reasoning and efficiency",
+      "description": "Claude Sonnet 4.5 - Previous high-performance Claude release",
       "intelligence_score": 12
     },
     {
@@ -88,9 +118,10 @@
       "intelligence_score": 10
     },
     {
-      "model_name": "anthropic/claude-3.5-haiku",
+      "model_name": "anthropic/claude-haiku-4.5",
       "aliases": [
-        "haiku"
+        "haiku",
+        "haiku4.5"
       ],
       "context_window": 200000,
       "max_output_tokens": 64000,
@@ -99,15 +130,16 @@
       "supports_function_calling": false,
       "supports_images": true,
       "max_image_size_mb": 5.0,
-      "description": "Claude 3 Haiku - Fast and efficient with vision",
-      "intelligence_score": 8
+      "description": "Claude Haiku 4.5 - Current fast Claude model with vision",
+      "intelligence_score": 9
     },
     {
-      "model_name": "google/gemini-3-pro-preview",
+      "model_name": "google/gemini-3.1-pro-preview",
       "aliases": [
         "pro",
         "gemini-pro",
         "gemini",
+        "gemini3.1",
         "gemini3",
         "pro-openrouter"
       ],
@@ -119,7 +151,24 @@
       "supports_images": true,
       "max_image_size_mb": 20.0,
       "allow_code_generation": true,
-      "description": "Google's Gemini 3.0 Pro via OpenRouter with vision",
+      "description": "Google's Gemini 3.1 Pro Preview via OpenRouter with vision and advanced reasoning",
+      "intelligence_score": 19
+    },
+    {
+      "model_name": "google/gemini-3-pro-preview",
+      "aliases": [
+        "gemini-3-pro",
+        "pro-3-openrouter"
+      ],
+      "context_window": 1048576,
+      "max_output_tokens": 65536,
+      "supports_extended_thinking": true,
+      "supports_json_mode": true,
+      "supports_function_calling": true,
+      "supports_images": true,
+      "max_image_size_mb": 20.0,
+      "allow_code_generation": true,
+      "description": "Google's Gemini 3 Pro Preview via OpenRouter with vision",
       "intelligence_score": 18
     },
     {
@@ -140,10 +189,44 @@
       "intelligence_score": 18
     },
     {
-      "model_name": "google/gemini-2.5-flash",
+      "model_name": "google/gemini-3-flash-preview",
       "aliases": [
         "flash",
+        "flash3",
         "gemini-flash"
+      ],
+      "context_window": 1048576,
+      "max_output_tokens": 65536,
+      "supports_extended_thinking": true,
+      "supports_json_mode": true,
+      "supports_function_calling": true,
+      "supports_images": true,
+      "max_image_size_mb": 20.0,
+      "description": "Google's Gemini 3 Flash Preview via OpenRouter with vision and low-latency reasoning",
+      "intelligence_score": 13
+    },
+    {
+      "model_name": "google/gemini-3.1-flash-lite-preview",
+      "aliases": [
+        "flashlite",
+        "flash-lite",
+        "gemini-flash-lite"
+      ],
+      "context_window": 1048576,
+      "max_output_tokens": 65536,
+      "supports_extended_thinking": true,
+      "supports_json_mode": true,
+      "supports_function_calling": true,
+      "supports_images": true,
+      "max_image_size_mb": 20.0,
+      "description": "Google's Gemini 3.1 Flash-Lite Preview via OpenRouter for low-latency multimodal work",
+      "intelligence_score": 9
+    },
+    {
+      "model_name": "google/gemini-2.5-flash",
+      "aliases": [
+        "flash2.5",
+        "gemini-2.5-flash"
       ],
       "context_window": 1048576,
       "max_output_tokens": 65536,
@@ -353,19 +436,71 @@
       "intelligence_score": 18
     },
     {
-      "model_name": "openai/gpt-5-codex",
+      "model_name": "openai/gpt-5.3-codex",
       "aliases": [
         "codex",
+        "gpt5.3-codex",
+        "gpt-5.3-codex",
+        "gpt5.3",
+        "gpt-5.3",
+        "5.3"
+      ],
+      "context_window": 400000,
+      "max_output_tokens": 128000,
+      "supports_extended_thinking": true,
+      "supports_json_mode": true,
+      "supports_function_calling": true,
+      "supports_images": true,
+      "max_image_size_mb": 20.0,
+      "supports_temperature": true,
+      "temperature_constraint": "fixed",
+      "use_openai_response_api": true,
+      "default_reasoning_effort": "high",
+      "allow_code_generation": true,
+      "description": "GPT-5.3 Codex via OpenRouter - Latest frontier Codex model for agentic coding workflows",
+      "intelligence_score": 20
+    },
+    {
+      "model_name": "openai/gpt-5.2-codex",
+      "aliases": [
+        "gpt5.2-codex",
+        "gpt-5.2-codex",
+        "gpt5.2code",
+        "gpt-5.2-code"
+      ],
+      "context_window": 400000,
+      "max_output_tokens": 128000,
+      "supports_extended_thinking": true,
+      "supports_json_mode": true,
+      "supports_function_calling": true,
+      "supports_images": true,
+      "max_image_size_mb": 20.0,
+      "supports_temperature": true,
+      "temperature_constraint": "fixed",
+      "use_openai_response_api": true,
+      "default_reasoning_effort": "high",
+      "allow_code_generation": true,
+      "description": "GPT-5.2 Codex via OpenRouter - Current OpenAI API Codex generation with strong coding performance",
+      "intelligence_score": 19
+    },
+    {
+      "model_name": "openai/gpt-5-codex",
+      "aliases": [
         "gpt5codex"
       ],
       "context_window": 400000,
       "max_output_tokens": 128000,
-      "supports_extended_thinking": false,
+      "supports_extended_thinking": true,
       "supports_json_mode": true,
-      "supports_function_calling": false,
-      "supports_images": false,
-      "max_image_size_mb": 0.0,
-      "description": "GPT-5-Codex is a specialized version of GPT-5 optimized for software engineering and coding workflows",
+      "supports_function_calling": true,
+      "supports_images": true,
+      "max_image_size_mb": 20.0,
+      "supports_temperature": true,
+      "temperature_constraint": "fixed",
+      "use_openai_response_api": true,
+      "default_reasoning_effort": "medium",
+      "allow_code_generation": true,
+      "description": "GPT-5 Codex via OpenRouter - Stable Codex line optimized for software engineering and coding workflows",
       "intelligence_score": 17
     },
     {
@@ -507,6 +642,26 @@
       "temperature_constraint": "range",
       "description": "xAI's Grok 4.1 Fast Reasoning via OpenRouter (2M context) with vision and advanced reasoning",
       "intelligence_score": 15
+    },
+    {
+      "model_name": "x-ai/grok-code-fast-1",
+      "aliases": [
+        "grok-code",
+        "grok-code-openrouter",
+        "grokcode"
+      ],
+      "context_window": 256000,
+      "max_output_tokens": 256000,
+      "supports_extended_thinking": true,
+      "supports_json_mode": true,
+      "supports_function_calling": true,
+      "supports_images": false,
+      "max_image_size_mb": 0.0,
+      "supports_temperature": true,
+      "temperature_constraint": "range",
+      "allow_code_generation": true,
+      "description": "xAI's Grok Code Fast via OpenRouter - Coding-specialized model for agentic edits and code understanding",
+      "intelligence_score": 14
     }
   ]
 }

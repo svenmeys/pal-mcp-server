@@ -10,16 +10,64 @@ import json
 import os
 import shutil
 import tempfile
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
+from clink.agents import AgentOutput
+from clink.models import ResolvedCLIClient, ResolvedCLIRole
+from clink.parsers.base import ParsedCLIResponse
 from config import MCP_PROMPT_SIZE_LIMIT
 from tools.chat import ChatTool
 from tools.codereview import CodeReviewTool
 from tools.shared.exceptions import ToolExecutionError
 
 # from tools.debug import DebugIssueTool  # Commented out - debug tool refactored
+
+
+def _make_codereview_cli_mocks(content: str):
+    """Build fake clink registry + agent so codereview expert analysis is hermetic.
+
+    Returns (get_registry_fn, create_agent_fn) suitable for patching
+    ``clink.get_registry`` and ``clink.agents.create_agent``.
+    """
+    prompt_path = Path("systemprompts/clink/codex_codereviewer.txt").resolve()
+    role = ResolvedCLIRole(name="codereviewer", prompt_path=prompt_path, role_args=[])
+    client = ResolvedCLIClient(
+        name="codex",
+        executable=["codex"],
+        working_dir=None,
+        internal_args=["exec"],
+        config_args=["--json"],
+        env={},
+        timeout_seconds=30,
+        parser="codex_jsonl",
+        runner="codex",
+        roles={"codereviewer": role},
+    )
+
+    class DummyRegistry:
+        def get_client(self, cli_name: str):
+            return client
+
+        def list_clients(self):
+            return ["claude", "codex", "gemini"]
+
+    class DummyAgent:
+        async def run(self, **kwargs):
+            return AgentOutput(
+                parsed=ParsedCLIResponse(content=content, metadata={"model_used": "gpt-5.4"}),
+                sanitized_command=["codex", "exec", "--json"],
+                returncode=0,
+                stdout="{}",
+                stderr="",
+                duration_seconds=0.1,
+                parser_name="codex_jsonl",
+                output_file_content=None,
+            )
+
+    return (lambda: DummyRegistry()), (lambda resolved_client: DummyAgent())
 
 
 class TestLargePromptHandling:
@@ -175,11 +223,19 @@ class TestLargePromptHandling:
                     "files_checked": ["/some/file.py"],
                     "focus_on": large_prompt,
                     "prompt": "Test code review for validation purposes",
-                    "model": "o3-mini",
+                    "model": "codex",
                 }
 
+                # Expert analysis now routes through a clink CLI. Mock the CLI agent so
+                # the test stays hermetic (no real codex subprocess) and deterministic.
+                get_registry_fn, create_agent_fn = _make_codereview_cli_mocks("Review complete. No blocking issues.")
+
                 try:
-                    result = await tool.execute(args)
+                    with (
+                        patch("clink.get_registry", get_registry_fn),
+                        patch("clink.agents.create_agent", create_agent_fn),
+                    ):
+                        result = await tool.execute(args)
                 except ToolExecutionError as exc:
                     output = json.loads(exc.payload if hasattr(exc, "payload") else str(exc))
                 else:
@@ -187,13 +243,13 @@ class TestLargePromptHandling:
                     output = json.loads(result[0].text)
 
                 # The large focus_on may trigger the resend_prompt guard before provider access.
-                # When the guard does not trigger, auto-mode falls back to provider selection and
-                # returns an error about the unavailable model. Both behaviors are acceptable for this test.
+                # When the guard does not trigger, expert analysis runs through the mocked CLI
+                # and the workflow completes via calling_expert_analysis. Both are acceptable.
                 if output.get("status") == "resend_prompt":
                     assert output["metadata"]["prompt_size"] == len(large_prompt)
                 else:
-                    assert output.get("status") == "error"
-                    assert "Model" in output.get("content", "")
+                    assert output.get("status") == "calling_expert_analysis"
+                    assert output["expert_analysis"]["raw_analysis"] == "Review complete. No blocking issues."
 
             except Exception as e:
                 # If we get an unexpected exception, ensure it's not a mock artifact

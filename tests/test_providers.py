@@ -118,7 +118,7 @@ class TestGeminiProvider:
         assert provider.validate_model_name("pro")
 
         capabilities = provider.get_capabilities("flash")
-        assert capabilities.model_name == "gemini-2.5-flash"
+        assert capabilities.model_name == "gemini-3-flash-preview"
 
     @patch("google.genai.Client")
     def test_generate_content(self, mock_client_class):
@@ -186,14 +186,14 @@ class TestOpenAIProvider:
         assert capabilities.context_window == 200_000
         assert not capabilities.supports_extended_thinking
 
-    def test_get_capabilities_o4_mini(self):
-        """Test getting O4-mini model capabilities"""
+    def test_get_capabilities_o3_pro(self):
+        """Test getting O3-Pro model capabilities"""
         provider = OpenAIModelProvider(api_key="test-key")
 
-        capabilities = provider.get_capabilities("o4-mini")
+        capabilities = provider.get_capabilities("o3-pro")
 
         assert capabilities.provider == ProviderType.OPENAI
-        assert capabilities.model_name == "o4-mini"
+        assert capabilities.model_name == "o3-pro"
         assert capabilities.context_window == 200_000
         assert not capabilities.supports_extended_thinking
         # Check temperature constraint is fixed at 1.0
@@ -206,12 +206,12 @@ class TestOpenAIProvider:
         assert provider.validate_model_name("o3")
         assert provider.validate_model_name("o3mini")
         assert provider.validate_model_name("o3-mini")  # Backwards compatibility
-        assert provider.validate_model_name("o4-mini")
-        assert provider.validate_model_name("o4mini")
-        assert provider.validate_model_name("o4-mini")
-        assert provider.validate_model_name("gpt-5.2")
-        assert provider.validate_model_name("gpt-5.1-codex")
-        assert provider.validate_model_name("gpt-5.1-codex-mini")
+        assert provider.validate_model_name("o3-pro")
+        assert provider.validate_model_name("o3pro")
+        assert provider.validate_model_name("gpt-5.5")
+        assert provider.validate_model_name("gpt-5.4")
+        assert provider.validate_model_name("gpt-5.3-codex")
+        assert provider.validate_model_name("gpt-5.3-chat-latest")
         assert not provider.validate_model_name("gpt-4o")
         assert not provider.validate_model_name("invalid-model")
 
@@ -219,23 +219,19 @@ class TestOpenAIProvider:
         """OpenAI catalogue exposes extended thinking capability via ModelCapabilities."""
         provider = OpenAIModelProvider(api_key="test-key")
 
-        aliases = ["o3", "o3mini", "o3-mini", "o4-mini", "o4mini"]
+        aliases = ["o3", "o3mini", "o3-mini", "o3-pro", "o3pro"]
         for alias in aliases:
             assert not provider.get_capabilities(alias).supports_extended_thinking
 
-    def test_gpt52_family_capabilities(self):
-        """Ensure GPT-5.2 base model exposes correct capability flags."""
+    def test_gpt54_family_capabilities(self):
+        """Ensure GPT-5.4 base model exposes correct capability flags."""
         provider = OpenAIModelProvider(api_key="test-key")
 
-        base = provider.get_capabilities("gpt-5.2")
+        base = provider.get_capabilities("gpt-5.4")
         assert base.supports_streaming
         assert base.allow_code_generation
 
-        codex = provider.get_capabilities("gpt-5.1-codex")
-        assert not codex.supports_streaming
+        codex = provider.get_capabilities("gpt-5.3-codex")
+        assert codex.supports_streaming
         assert codex.use_openai_response_api
         assert codex.allow_code_generation
-
-        codex_mini = provider.get_capabilities("gpt-5.1-codex-mini")
-        assert codex_mini.supports_streaming
-        assert codex_mini.allow_code_generation

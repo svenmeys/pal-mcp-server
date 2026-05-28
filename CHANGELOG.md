@@ -2,6 +2,50 @@
 
 <!-- version list -->
 
+## Fork — 2026-05-28
+
+Personal fork changes (svenmeys). Not an upstream release.
+
+### Changed
+
+- Refreshed the model catalog: OpenAI now exposes `gpt-5.5`, `gpt-5.4`,
+  `gpt-5.4-mini`, `gpt-5.4-nano`, `gpt-5.3-codex`, `gpt-5.3-chat-latest`;
+  Gemini moves to `gemini-3.1-pro-preview` / `gemini-3-flash-preview`;
+  OpenRouter adds Claude 4.6 / Haiku 4.5, Gemini 3.1, and current Codex/Grok
+  entries. Dropped the retired GPT-5.1/5.2 and `o4-mini` models.
+- Expert analysis for workflow tools (codereview, analyze, debug, thinkdeep)
+  now routes through clink CLI clients (codex/claude/gemini) instead of the
+  provider API. This lets the tools work through CLI OAuth sessions when the
+  API project has no access to the requested model.
+
+### Added
+
+- Server boundary now treats a bare CLI client name (`codex`/`claude`/`gemini`)
+  as CLI-routed: it skips provider validation and lets the workflow tool run the
+  CLI directly. Scoped to workflow tools, so simple tools still return the normal
+  "model not available" error for an unknown model.
+
+### Fixed
+
+- `EXTENDED_REASONING` model selection no longer falls through to a model
+  without extended-thinking support; it now prefers `gpt-5.3-codex` then the
+  GPT-5 flagship.
+- `model="auto"` (outside auto mode) and unavailable models again surface the
+  proper "model not available" error instead of silently falling back to the
+  Claude CLI.
+- Bumped `python-dotenv` floor to `>=1.2.2` (CVE-2026-28684).
+
+### Known issues
+
+- Six integration tests are red in this environment and left as-is: the three
+  OpenAI chat/continuation cassette tests and two consensus tests need cassettes
+  recorded against the GPT-5 Responses API (no API access here), and the Gemini
+  clink test fails on a local Gemini CLI MCP-config error, not the code.
+- Transitive dependencies still carry known CVEs (cryptography, idna, requests,
+  urllib3, starlette, python-multipart, etc.). The `starlette` fix is a major
+  version jump that comes in via `mcp` and needs compatibility checking before
+  bumping — left for a deliberate follow-up.
+
 ## v9.8.2 (2025-12-15)
 
 ### Bug Fixes

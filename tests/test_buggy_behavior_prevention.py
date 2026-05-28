@@ -25,7 +25,7 @@ class TestBuggyBehaviorPrevention:
         provider = OpenAIModelProvider(api_key="test-key")
 
         # Baseline alias-only list captured for regression documentation
-        alias_only_snapshot = ["mini", "o3mini"]  # Missing 'o4-mini', 'o3-mini' targets
+        alias_only_snapshot = ["mini", "o3mini"]  # Missing 'gpt-5.4-mini', 'o3-mini' targets
 
         # Canonical listing with aliases and targets
         comprehensive_list = provider.list_models(
@@ -37,17 +37,17 @@ class TestBuggyBehaviorPrevention:
 
         # Comprehensive listing should contain aliases and their targets
         assert "mini" in comprehensive_list
-        assert "o4-mini" in comprehensive_list
+        assert "gpt-5.4-mini" in comprehensive_list
         assert "o3mini" in comprehensive_list
         assert "o3-mini" in comprehensive_list
 
         # Legacy alias-only snapshots exclude targets
-        assert "o4-mini" not in alias_only_snapshot
+        assert "gpt-5.4-mini" not in alias_only_snapshot
         assert "o3-mini" not in alias_only_snapshot
 
         # This scenario previously failed when targets were omitted
         service = ModelRestrictionService()
-        service.restrictions = {ProviderType.OPENAI: {"o4-mini"}}  # Restrict to target
+        service.restrictions = {ProviderType.OPENAI: {"gpt-5.4-mini"}}  # Restrict to target
 
         with patch("utils.model_restrictions.logger") as mock_logger:
             provider_instances = {ProviderType.OPENAI: provider}
@@ -57,9 +57,9 @@ class TestBuggyBehaviorPrevention:
             target_warnings = [
                 call
                 for call in mock_logger.warning.call_args_list
-                if "o4-mini" in str(call) and "not a recognized" in str(call)
+                if "gpt-5.4-mini" in str(call) and "not a recognized" in str(call)
             ]
-            assert len(target_warnings) == 0, "o4-mini should be recognized as a valid target"
+            assert len(target_warnings) == 0, "gpt-5.4-mini should be recognized as a valid target"
 
     def test_target_models_are_recognized_during_validation(self):
         """Target model restrictions should not trigger false warnings."""
@@ -97,7 +97,7 @@ class TestBuggyBehaviorPrevention:
         provider = OpenAIModelProvider(api_key="test-key")
 
         # Simulate a scenario where admin wants to restrict specific targets
-        with patch.dict(os.environ, {"OPENAI_ALLOWED_MODELS": "o3-mini,o4-mini"}):
+        with patch.dict(os.environ, {"OPENAI_ALLOWED_MODELS": "o3-mini,o3-pro"}):
             # Clear cached restriction service
             import utils.model_restrictions
 
@@ -105,17 +105,17 @@ class TestBuggyBehaviorPrevention:
 
             # These should work because they're explicitly allowed
             assert provider.validate_model_name("o3-mini")
-            assert provider.validate_model_name("o4-mini")
+            assert provider.validate_model_name("o3-pro")
 
             # These should be blocked
-            assert not provider.validate_model_name("o3-pro")  # Not in allowed list
+            assert not provider.validate_model_name("gpt-5.5")  # Not in allowed list
             assert not provider.validate_model_name("o3")  # Not in allowed list
 
-            # "mini" now resolves to gpt-5-mini, not o4-mini, so it should be blocked
-            assert not provider.validate_model_name("mini")  # Resolves to gpt-5-mini, which is NOT allowed
+            # "mini" resolves to gpt-5.4-mini, which is not allowed, so it should be blocked
+            assert not provider.validate_model_name("mini")  # Resolves to gpt-5.4-mini, which is NOT allowed
 
-            # But o4mini (the actual alias for o4-mini) should work
-            assert provider.validate_model_name("o4mini")  # Resolves to o4-mini, which IS allowed
+            # But o3pro (the actual alias for o3-pro) should work
+            assert provider.validate_model_name("o3pro")  # Resolves to o3-pro, which IS allowed
 
             # Verify our alias-aware list includes the restricted models
             all_known = provider.list_models(
@@ -125,9 +125,9 @@ class TestBuggyBehaviorPrevention:
                 unique=True,
             )
             assert "o3-mini" in all_known  # Should be known (and allowed)
-            assert "o4-mini" in all_known  # Should be known (and allowed)
-            assert "o3-pro" in all_known  # Should be known (but blocked)
-            assert "mini" in all_known  # Should be known (and allowed since it resolves to o4-mini)
+            assert "o3-pro" in all_known  # Should be known (and allowed)
+            assert "gpt-5.5" in all_known  # Should be known (but blocked)
+            assert "mini" in all_known  # Should be known (but blocked since it resolves to gpt-5.4-mini)
 
     def test_alias_aware_listing_extends_canonical_view(self):
         """Alias-aware list should be a superset of restriction-filtered names."""
@@ -149,7 +149,7 @@ class TestBuggyBehaviorPrevention:
             ], f"Alias-aware listing missing baseline model {model}"
 
         # Alias-aware variant should include canonical targets as well
-        for target in ("o4-mini", "o3-mini"):
+        for target in ("gpt-5.4-mini", "o3-mini"):
             assert target in alias_aware_models, f"Alias-aware listing should include target model {target}"
 
     def test_restriction_validation_uses_alias_aware_variant(self):
@@ -208,8 +208,8 @@ class TestBuggyBehaviorPrevention:
     def test_alias_listing_covers_targets_for_all_providers(self):
         """Alias-aware listings should expose targets across providers."""
         providers_to_test = [
-            (OpenAIModelProvider(api_key="test-key"), "mini", "o4-mini"),
-            (GeminiModelProvider(api_key="test-key"), "flash", "gemini-2.5-flash"),
+            (OpenAIModelProvider(api_key="test-key"), "mini", "gpt-5.4-mini"),
+            (GeminiModelProvider(api_key="test-key"), "flash", "gemini-3-flash-preview"),
         ]
 
         for provider, alias, target in providers_to_test:
@@ -224,7 +224,7 @@ class TestBuggyBehaviorPrevention:
             # No duplicates should exist
             assert len(all_known) == len(set(all_known)), f"{provider.__class__.__name__} returns duplicate models"
 
-    @patch.dict(os.environ, {"OPENAI_ALLOWED_MODELS": "o4-mini,invalid-model"})
+    @patch.dict(os.environ, {"OPENAI_ALLOWED_MODELS": "o3-pro,invalid-model"})
     def test_validation_correctly_identifies_invalid_models(self):
         """Validation should flag invalid models while listing valid targets."""
         # Clear cached restriction service
@@ -246,10 +246,10 @@ class TestBuggyBehaviorPrevention:
             ]
             assert len(invalid_warnings) > 0, "Should warn about truly invalid models"
 
-            # The warning should mention o4-mini in the known models list
+            # The warning should mention o3-pro in the known models list
             warning_text = str(mock_logger.warning.call_args_list[0])
             assert "Known models:" in warning_text, "Warning should include known models list"
-            assert "o4-mini" in warning_text, "o4-mini should appear in known models"
+            assert "o3-pro" in warning_text, "o3-pro should appear in known models"
             assert "o3-mini" in warning_text, "o3-mini should appear in known models"
 
             # But the warning should be specifically about invalid-model

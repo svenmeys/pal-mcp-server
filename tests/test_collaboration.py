@@ -4,14 +4,63 @@ Tests for dynamic context request and collaboration features
 
 import json
 import os
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
 
+from clink.agents import AgentOutput
+from clink.models import ResolvedCLIClient, ResolvedCLIRole
+from clink.parsers.base import ParsedCLIResponse
 from tests.mock_helpers import create_mock_provider
 from tools.analyze import AnalyzeTool
 from tools.debug import DebugIssueTool
 from tools.models import FilesNeededRequest, ToolOutput
+
+
+def _patch_cli_expert_analysis(content: str):
+    """Context manager patching the clink registry + agent for hermetic expert analysis.
+
+    Expert analysis routes through a clink CLI now. Returns a tuple of patch
+    objects to enter so the mocked ``content`` is returned without spawning a
+    real CLI subprocess.
+    """
+    prompt_path = Path("systemprompts/clink/codex_codereviewer.txt").resolve()
+    role = ResolvedCLIRole(name="default", prompt_path=prompt_path, role_args=[])
+    client = ResolvedCLIClient(
+        name="claude",
+        executable=["claude"],
+        working_dir=None,
+        internal_args=[],
+        config_args=[],
+        env={},
+        timeout_seconds=30,
+        parser="codex_jsonl",
+        runner="codex",
+        roles={"default": role},
+    )
+
+    class DummyRegistry:
+        def get_client(self, cli_name: str):
+            return client
+
+    class DummyAgent:
+        async def run(self, **kwargs):
+            return AgentOutput(
+                parsed=ParsedCLIResponse(content=content, metadata={"model_used": "gemini-2.5-flash"}),
+                sanitized_command=["claude"],
+                returncode=0,
+                stdout="{}",
+                stderr="",
+                duration_seconds=0.1,
+                parser_name="codex_jsonl",
+                output_file_content=None,
+            )
+
+    return (
+        patch("clink.get_registry", lambda: DummyRegistry()),
+        patch("clink.agents.create_agent", lambda resolved_client: DummyAgent()),
+    )
 
 
 class TestDynamicContextRequests:
@@ -46,16 +95,18 @@ class TestDynamicContextRequests:
         )
         mock_get_provider.return_value = mock_provider
 
-        result = await analyze_tool.execute(
-            {
-                "step": "Analyze the dependencies used in this project",
-                "step_number": 1,
-                "total_steps": 1,
-                "next_step_required": False,
-                "findings": "Initial dependency analysis",
-                "relevant_files": ["/absolute/path/src/index.js"],
-            }
-        )
+        registry_patch, agent_patch = _patch_cli_expert_analysis(clarification_json)
+        with registry_patch, agent_patch:
+            result = await analyze_tool.execute(
+                {
+                    "step": "Analyze the dependencies used in this project",
+                    "step_number": 1,
+                    "total_steps": 1,
+                    "next_step_required": False,
+                    "findings": "Initial dependency analysis",
+                    "relevant_files": ["/absolute/path/src/index.js"],
+                }
+            )
 
         assert len(result) == 1
 
@@ -127,16 +178,18 @@ class TestDynamicContextRequests:
         )
         mock_get_provider.return_value = mock_provider
 
-        result = await analyze_tool.execute(
-            {
-                "step": "What does this do?",
-                "step_number": 1,
-                "total_steps": 1,
-                "next_step_required": False,
-                "findings": "Initial code analysis",
-                "relevant_files": ["/absolute/path/test.py"],
-            }
-        )
+        registry_patch, agent_patch = _patch_cli_expert_analysis(malformed_json)
+        with registry_patch, agent_patch:
+            result = await analyze_tool.execute(
+                {
+                    "step": "What does this do?",
+                    "step_number": 1,
+                    "total_steps": 1,
+                    "next_step_required": False,
+                    "findings": "Initial code analysis",
+                    "relevant_files": ["/absolute/path/test.py"],
+                }
+            )
 
         assert len(result) == 1
 
@@ -200,16 +253,18 @@ class TestDynamicContextRequests:
             )
             mock_get_provider.return_value = mock_provider
 
-            result = await analyze_tool.execute(
-                {
-                    "step": "Analyze database connection timeout issue",
-                    "step_number": 1,
-                    "total_steps": 1,
-                    "next_step_required": False,
-                    "findings": "Initial database timeout analysis",
-                    "relevant_files": ["/absolute/logs/error.log"],
-                }
-            )
+            registry_patch, agent_patch = _patch_cli_expert_analysis(clarification_json)
+            with registry_patch, agent_patch:
+                result = await analyze_tool.execute(
+                    {
+                        "step": "Analyze database connection timeout issue",
+                        "step_number": 1,
+                        "total_steps": 1,
+                        "next_step_required": False,
+                        "findings": "Initial database timeout analysis",
+                        "relevant_files": ["/absolute/logs/error.log"],
+                    }
+                )
 
             assert len(result) == 1
 
@@ -308,16 +363,25 @@ class TestDynamicContextRequests:
         """Test error response format"""
         mock_get_provider.side_effect = Exception("API connection failed")
 
-        result = await analyze_tool.execute(
-            {
-                "step": "Analyze this",
-                "step_number": 1,
-                "total_steps": 1,
-                "next_step_required": False,
-                "findings": "Initial analysis",
-                "relevant_files": ["/absolute/path/test.py"],
-            }
-        )
+        # Expert analysis routes through a clink CLI; simulate a CLI failure
+        # hermetically so the error path is exercised without spawning a real CLI.
+        from clink.agents import CLIAgentError
+
+        def _raise(*args, **kwargs):
+            raise CLIAgentError("API connection failed")
+
+        registry_patch, agent_patch = _patch_cli_expert_analysis("unused")
+        with registry_patch, patch("clink.agents.create_agent", _raise):
+            result = await analyze_tool.execute(
+                {
+                    "step": "Analyze this",
+                    "step_number": 1,
+                    "total_steps": 1,
+                    "next_step_required": False,
+                    "findings": "Initial analysis",
+                    "relevant_files": ["/absolute/path/test.py"],
+                }
+            )
 
         assert len(result) == 1
 

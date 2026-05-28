@@ -46,26 +46,24 @@ class TestOpenAIProvider:
         assert provider.validate_model_name("o3") is True
         assert provider.validate_model_name("o3-mini") is True
         assert provider.validate_model_name("o3-pro") is True
-        assert provider.validate_model_name("o4-mini") is True
-        assert provider.validate_model_name("o4-mini") is True
-        assert provider.validate_model_name("gpt-5") is True
-        assert provider.validate_model_name("gpt-5-mini") is True
-        assert provider.validate_model_name("gpt-5.2") is True
-        assert provider.validate_model_name("gpt-5.1-codex") is True
-        assert provider.validate_model_name("gpt-5.1-codex-mini") is True
+        assert provider.validate_model_name("gpt-5.5") is True
+        assert provider.validate_model_name("gpt-5.4") is True
+        assert provider.validate_model_name("gpt-5.4-mini") is True
+        assert provider.validate_model_name("gpt-5.4-nano") is True
+        assert provider.validate_model_name("gpt-5.3-codex") is True
+        assert provider.validate_model_name("gpt-5.3-chat-latest") is True
 
         # Test valid aliases
         assert provider.validate_model_name("mini") is True
+        assert provider.validate_model_name("nano") is True
         assert provider.validate_model_name("o3mini") is True
-        assert provider.validate_model_name("o4mini") is True
-        assert provider.validate_model_name("o4mini") is True
         assert provider.validate_model_name("gpt5") is True
-        assert provider.validate_model_name("gpt5-mini") is True
-        assert provider.validate_model_name("gpt5mini") is True
-        assert provider.validate_model_name("gpt5.2") is True
-        assert provider.validate_model_name("gpt5.1") is True
-        assert provider.validate_model_name("gpt5.1-codex") is True
-        assert provider.validate_model_name("codex-mini") is True
+        assert provider.validate_model_name("gpt5.4-mini") is True
+        assert provider.validate_model_name("gpt5.4mini") is True
+        assert provider.validate_model_name("gpt5.4") is True
+        assert provider.validate_model_name("5.4") is True
+        assert provider.validate_model_name("codex") is True
+        assert provider.validate_model_name("gpt5.3-codex") is True
 
         # Test invalid model
         assert provider.validate_model_name("invalid-model") is False
@@ -77,30 +75,28 @@ class TestOpenAIProvider:
         provider = OpenAIModelProvider("test-key")
 
         # Test shorthand resolution
-        assert provider._resolve_model_name("mini") == "gpt-5-mini"  # "mini" now resolves to gpt-5-mini
+        assert provider._resolve_model_name("mini") == "gpt-5.4-mini"  # "mini" now resolves to gpt-5.4-mini
+        assert provider._resolve_model_name("nano") == "gpt-5.4-nano"
         assert provider._resolve_model_name("o3mini") == "o3-mini"
-        assert provider._resolve_model_name("o4mini") == "o4-mini"
-        assert provider._resolve_model_name("o4mini") == "o4-mini"
-        assert provider._resolve_model_name("gpt5") == "gpt-5"
-        assert provider._resolve_model_name("gpt5-mini") == "gpt-5-mini"
-        assert provider._resolve_model_name("gpt5mini") == "gpt-5-mini"
-        assert provider._resolve_model_name("gpt5.2") == "gpt-5.2"
-        assert provider._resolve_model_name("gpt5.1") == "gpt-5.2"
-        assert provider._resolve_model_name("gpt5.1-codex") == "gpt-5.1-codex"
-        assert provider._resolve_model_name("codex-mini") == "gpt-5.1-codex-mini"
+        assert provider._resolve_model_name("gpt5") == "gpt-5.5"
+        assert provider._resolve_model_name("gpt5.4-mini") == "gpt-5.4-mini"
+        assert provider._resolve_model_name("gpt5.4mini") == "gpt-5.4-mini"
+        assert provider._resolve_model_name("gpt5.4") == "gpt-5.4"
+        assert provider._resolve_model_name("5.4") == "gpt-5.4"
+        assert provider._resolve_model_name("codex") == "gpt-5.3-codex"
+        assert provider._resolve_model_name("gpt5.3-codex") == "gpt-5.3-codex"
 
         # Test full name passthrough
         assert provider._resolve_model_name("o3") == "o3"
         assert provider._resolve_model_name("o3-mini") == "o3-mini"
         assert provider._resolve_model_name("o3-pro") == "o3-pro"
-        assert provider._resolve_model_name("o4-mini") == "o4-mini"
-        assert provider._resolve_model_name("o4-mini") == "o4-mini"
-        assert provider._resolve_model_name("gpt-5") == "gpt-5"
-        assert provider._resolve_model_name("gpt-5-mini") == "gpt-5-mini"
-        assert provider._resolve_model_name("gpt-5.2") == "gpt-5.2"
-        assert provider._resolve_model_name("gpt-5.1") == "gpt-5.2"
-        assert provider._resolve_model_name("gpt-5.1-codex") == "gpt-5.1-codex"
-        assert provider._resolve_model_name("gpt-5.1-codex-mini") == "gpt-5.1-codex-mini"
+        assert provider._resolve_model_name("gpt-5") == "gpt-5.5"
+        assert provider._resolve_model_name("gpt-5.5") == "gpt-5.5"
+        assert provider._resolve_model_name("gpt-5.4") == "gpt-5.4"
+        assert provider._resolve_model_name("gpt-5.4-mini") == "gpt-5.4-mini"
+        assert provider._resolve_model_name("gpt-5.4-nano") == "gpt-5.4-nano"
+        assert provider._resolve_model_name("gpt-5.3-codex") == "gpt-5.3-codex"
+        assert provider._resolve_model_name("gpt-5.3-chat-latest") == "gpt-5.3-chat-latest"
 
     def test_get_capabilities_o3(self):
         """Test getting model capabilities for O3."""
@@ -124,71 +120,72 @@ class TestOpenAIProvider:
         provider = OpenAIModelProvider("test-key")
 
         capabilities = provider.get_capabilities("mini")
-        assert capabilities.model_name == "gpt-5-mini"  # "mini" now resolves to gpt-5-mini
-        assert capabilities.friendly_name == "OpenAI (GPT-5-mini)"
+        assert capabilities.model_name == "gpt-5.4-mini"  # "mini" now resolves to gpt-5.4-mini
+        assert capabilities.friendly_name == "OpenAI (GPT-5.4 mini)"
         assert capabilities.context_window == 400_000
         assert capabilities.provider == ProviderType.OPENAI
 
     def test_get_capabilities_gpt5(self):
-        """Test getting model capabilities for GPT-5."""
+        """Test getting model capabilities for GPT-5 alias."""
         provider = OpenAIModelProvider("test-key")
 
         capabilities = provider.get_capabilities("gpt-5")
-        assert capabilities.model_name == "gpt-5"
-        assert capabilities.friendly_name == "OpenAI (GPT-5)"
-        assert capabilities.context_window == 400_000
+        assert capabilities.model_name == "gpt-5.5"
+        assert capabilities.friendly_name == "OpenAI (GPT-5.5)"
+        assert capabilities.context_window == 1_050_000
         assert capabilities.max_output_tokens == 128_000
         assert capabilities.provider == ProviderType.OPENAI
         assert capabilities.supports_extended_thinking is True
         assert capabilities.supports_system_prompts is True
-        assert capabilities.supports_streaming is False
+        assert capabilities.supports_streaming is True
         assert capabilities.supports_function_calling is True
         assert capabilities.supports_temperature is True
 
     def test_get_capabilities_gpt5_mini(self):
-        """Test getting model capabilities for GPT-5-mini."""
+        """Test getting model capabilities for GPT-5.4 mini."""
         provider = OpenAIModelProvider("test-key")
 
-        capabilities = provider.get_capabilities("gpt-5-mini")
-        assert capabilities.model_name == "gpt-5-mini"
-        assert capabilities.friendly_name == "OpenAI (GPT-5-mini)"
+        capabilities = provider.get_capabilities("gpt-5.4-mini")
+        assert capabilities.model_name == "gpt-5.4-mini"
+        assert capabilities.friendly_name == "OpenAI (GPT-5.4 mini)"
         assert capabilities.context_window == 400_000
         assert capabilities.max_output_tokens == 128_000
         assert capabilities.provider == ProviderType.OPENAI
         assert capabilities.supports_extended_thinking is True
         assert capabilities.supports_system_prompts is True
-        assert capabilities.supports_streaming is False
+        assert capabilities.supports_streaming is True
         assert capabilities.supports_function_calling is True
         assert capabilities.supports_temperature is True
 
-    def test_get_capabilities_gpt52(self):
-        """Test GPT-5.2 capabilities reflect new metadata."""
+    def test_get_capabilities_gpt54(self):
+        """Test GPT-5.4 capabilities reflect new metadata."""
         provider = OpenAIModelProvider("test-key")
 
-        capabilities = provider.get_capabilities("gpt-5.2")
-        assert capabilities.model_name == "gpt-5.2"
+        capabilities = provider.get_capabilities("gpt-5.4")
+        assert capabilities.model_name == "gpt-5.4"
         assert capabilities.supports_streaming is True
         assert capabilities.supports_function_calling is True
         assert capabilities.supports_json_mode is True
         assert capabilities.allow_code_generation is True
 
-    def test_get_capabilities_gpt51_codex(self):
-        """Test GPT-5.1 Codex is responses-only and non-streaming."""
+    def test_get_capabilities_gpt53_codex(self):
+        """Test GPT-5.3 Codex is responses-only and streaming-capable."""
         provider = OpenAIModelProvider("test-key")
 
-        capabilities = provider.get_capabilities("gpt-5.1-codex")
-        assert capabilities.model_name == "gpt-5.1-codex"
-        assert capabilities.supports_streaming is False
+        capabilities = provider.get_capabilities("gpt-5.3-codex")
+        assert capabilities.model_name == "gpt-5.3-codex"
+        assert capabilities.supports_streaming is True
         assert capabilities.use_openai_response_api is True
         assert capabilities.allow_code_generation is True
 
-    def test_get_capabilities_gpt51_codex_mini(self):
-        """Test GPT-5.1 Codex mini exposes streaming and code generation."""
+    def test_get_capabilities_codex_alias(self):
+        """Test the 'codex' alias resolves to the current flagship Codex model."""
         provider = OpenAIModelProvider("test-key")
 
-        capabilities = provider.get_capabilities("gpt-5.1-codex-mini")
-        assert capabilities.model_name == "gpt-5.1-codex-mini"
+        capabilities = provider.get_capabilities("codex")
+        assert capabilities.model_name == "gpt-5.3-codex"
         assert capabilities.supports_streaming is True
+        assert capabilities.use_openai_response_api is True
         assert capabilities.allow_code_generation is True
 
     @patch("providers.openai_compatible.OpenAI")
@@ -196,7 +193,8 @@ class TestOpenAIProvider:
         """Test that generate_content resolves aliases before making API calls.
 
         This is the CRITICAL test that was missing - verifying that aliases
-        like 'mini' get resolved to 'o4-mini' before being sent to OpenAI API.
+        like 'gpt5.3' get resolved to 'gpt-5.3-chat-latest' before being sent
+        to OpenAI API.
         """
         # Set up mock OpenAI client
         mock_client = MagicMock()
@@ -207,7 +205,7 @@ class TestOpenAIProvider:
         mock_response.choices = [MagicMock()]
         mock_response.choices[0].message.content = "Test response"
         mock_response.choices[0].finish_reason = "stop"
-        mock_response.model = "gpt-4.1-2025-04-14"  # API returns the resolved model name
+        mock_response.model = "gpt-5.3-chat-latest"  # API returns the resolved model name
         mock_response.id = "test-id"
         mock_response.created = 1234567890
         mock_response.usage = MagicMock()
@@ -219,21 +217,23 @@ class TestOpenAIProvider:
 
         provider = OpenAIModelProvider("test-key")
 
-        # Call generate_content with alias 'gpt4.1' (resolves to gpt-4.1, supports temperature)
+        # Call generate_content with alias 'gpt5.3' (resolves to gpt-5.3-chat-latest, supports temperature)
         result = provider.generate_content(
             prompt="Test prompt",
-            model_name="gpt4.1",
-            temperature=1.0,  # This should be resolved to "gpt-4.1"
+            model_name="gpt5.3",
+            temperature=1.0,  # This should be resolved to "gpt-5.3-chat-latest"
         )
 
         # Verify the API was called with the RESOLVED model name
         mock_client.chat.completions.create.assert_called_once()
         call_kwargs = mock_client.chat.completions.create.call_args[1]
 
-        # CRITICAL ASSERTION: The API should receive "gpt-4.1", not "gpt4.1"
-        assert call_kwargs["model"] == "gpt-4.1", f"Expected 'gpt-4.1' but API received '{call_kwargs['model']}'"
+        # CRITICAL ASSERTION: The API should receive "gpt-5.3-chat-latest", not "gpt5.3"
+        assert (
+            call_kwargs["model"] == "gpt-5.3-chat-latest"
+        ), f"Expected 'gpt-5.3-chat-latest' but API received '{call_kwargs['model']}'"
 
-        # Verify other parameters (gpt-4.1 supports temperature unlike O3/O4 models)
+        # Verify other parameters (gpt-5.3-chat-latest supports temperature unlike O3 models)
         assert call_kwargs["temperature"] == 1.0
         assert len(call_kwargs["messages"]) == 1
         assert call_kwargs["messages"][0]["role"] == "user"
@@ -241,7 +241,7 @@ class TestOpenAIProvider:
 
         # Verify response
         assert result.content == "Test response"
-        assert result.model_name == "gpt-4.1"  # Should be the resolved name
+        assert result.model_name == "gpt-5.3-chat-latest"  # Should be the resolved name
 
     @patch("providers.openai_compatible.OpenAI")
     def test_generate_content_other_aliases(self, mock_openai_class):
@@ -267,11 +267,11 @@ class TestOpenAIProvider:
         call_kwargs = mock_client.chat.completions.create.call_args[1]
         assert call_kwargs["model"] == "o3-mini"
 
-        # Test o4mini -> o4-mini
-        mock_response.model = "o4-mini"
-        provider.generate_content(prompt="Test", model_name="o4mini", temperature=1.0)
+        # Test gpt5.3 -> gpt-5.3-chat-latest (chat-completions model)
+        mock_response.model = "gpt-5.3-chat-latest"
+        provider.generate_content(prompt="Test", model_name="gpt5.3", temperature=1.0)
         call_kwargs = mock_client.chat.completions.create.call_args[1]
-        assert call_kwargs["model"] == "o4-mini"
+        assert call_kwargs["model"] == "gpt-5.3-chat-latest"
 
     @patch("providers.openai_compatible.OpenAI")
     def test_generate_content_no_alias_passthrough(self, mock_openai_class):
@@ -302,21 +302,22 @@ class TestOpenAIProvider:
         provider = OpenAIModelProvider("test-key")
 
         supported_aliases = [
-            "gpt-5",
-            "gpt-5-mini",
-            "gpt-5-nano",
+            "gpt-5",  # resolves to gpt-5.5
+            "gpt-5.4",
+            "gpt-5.4-mini",
+            "gpt-5.4-nano",
             "gpt5",
-            "gpt5-mini",
-            "gpt5mini",
-            "gpt5-nano",
-            "gpt5nano",
-            "nano",
-            "mini",  # resolves to gpt-5-mini
+            "gpt5.4-mini",
+            "gpt5.4mini",
+            "gpt5.4-nano",
+            "gpt5.4nano",
+            "nano",  # resolves to gpt-5.4-nano
+            "mini",  # resolves to gpt-5.4-mini
         ]
         for alias in supported_aliases:
             assert provider.get_capabilities(alias).supports_extended_thinking is True
 
-        unsupported_aliases = ["o3", "o3-mini", "o4-mini"]
+        unsupported_aliases = ["o3", "o3-mini", "o3-pro"]
         for alias in unsupported_aliases:
             assert provider.get_capabilities(alias).supports_extended_thinking is False
 

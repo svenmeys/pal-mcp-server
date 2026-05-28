@@ -2,8 +2,12 @@
 Tests for the main server functionality
 """
 
-import pytest
+import json
 
+import pytest
+from mcp.types import TextContent
+
+import server
 from server import handle_call_tool
 
 
@@ -105,3 +109,51 @@ class TestServerTools:
         assert "## Server Information" in content
         assert "## Configuration" in content
         assert "Current Version" in content
+
+    @pytest.mark.asyncio
+    async def test_handle_codereview_codex_uses_cli_path(self, monkeypatch):
+        """codereview should allow model='codex' without provider registry validation."""
+
+        captured_arguments = {}
+
+        class DummyCodeReviewTool:
+            def requires_model(self):
+                return True
+
+            def get_model_category(self):
+                from tools.models import ToolModelCategory
+
+                return ToolModelCategory.EXTENDED_REASONING
+
+            def get_expert_analysis_cli_name(self, request):
+                # Marks this as a CLI-routing-capable (workflow) tool so the
+                # server boundary applies the CLI bypass.
+                return "codex"
+
+            async def execute(self, arguments):
+                captured_arguments.update(arguments)
+                return [TextContent(type="text", text=json.dumps({"status": "success"}))]
+
+        monkeypatch.setitem(server.TOOLS, "codereview", DummyCodeReviewTool())
+        monkeypatch.setattr(
+            "providers.registry.ModelProviderRegistry.get_provider_for_model",
+            lambda model_name: None,
+        )
+
+        result = await handle_call_tool(
+            "codereview",
+            {
+                "model": "codex",
+                "step": "Review the changes",
+                "step_number": 1,
+                "total_steps": 1,
+                "next_step_required": False,
+                "findings": "Initial findings",
+                "relevant_files": ["/tmp/example.py"],
+            },
+        )
+
+        assert len(result) == 1
+        assert captured_arguments["_resolved_model_name"] == "codex"
+        assert captured_arguments["_workflow_provider_name"] == "codex"
+        assert "_model_context" not in captured_arguments
