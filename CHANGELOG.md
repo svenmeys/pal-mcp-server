@@ -2,6 +2,12 @@
 
 <!-- version list -->
 
+## Fork — 2026-05-29
+
+- Added `anthropic/claude-opus-4.8` to the OpenRouter catalog and moved the
+  `opus`/`claude-opus` aliases to it (released 2026-05-28; 4.6 kept as `opus4.6`).
+  The clink `claude` CLI already tracks latest via `--model opus`.
+
 ## Fork — 2026-05-28
 
 Personal fork changes (svenmeys). Not an upstream release.

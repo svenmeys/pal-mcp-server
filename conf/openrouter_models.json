@@ -25,10 +25,10 @@
   },
   "models": [
     {
-      "model_name": "anthropic/claude-opus-4.6",
+      "model_name": "anthropic/claude-opus-4.8",
       "aliases": [
         "opus",
-        "opus4.6",
+        "opus4.8",
         "claude-opus"
       ],
       "context_window": 200000,
@@ -38,7 +38,22 @@
       "supports_function_calling": false,
       "supports_images": true,
       "max_image_size_mb": 5.0,
-      "description": "Claude Opus 4.6 - Anthropic's latest frontier reasoning model for complex software engineering and agentic workflows",
+      "description": "Claude Opus 4.8 - Anthropic's latest frontier reasoning model (May 2026); sharper judgement, stronger coding and agentic workflows",
+      "intelligence_score": 20
+    },
+    {
+      "model_name": "anthropic/claude-opus-4.6",
+      "aliases": [
+        "opus4.6"
+      ],
+      "context_window": 200000,
+      "max_output_tokens": 64000,
+      "supports_extended_thinking": false,
+      "supports_json_mode": false,
+      "supports_function_calling": false,
+      "supports_images": true,
+      "max_image_size_mb": 5.0,
+      "description": "Claude Opus 4.6 - Anthropic frontier reasoning model for complex software engineering and agentic workflows",
       "intelligence_score": 19
     },
     {
