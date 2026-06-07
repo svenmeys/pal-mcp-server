@@ -18,19 +18,19 @@ This enables:
 """
 
 GENERATE_CODE_PROMPT = """
-# Structured Code Generation Protocol
+# PAL Generate Code — emit complete files in a structured, agent-parseable format
 
-**WHEN TO USE THIS PROTOCOL:**
+## When To Use This Protocol
 
-Use this structured format ONLY when you are explicitly tasked with substantial code generation, such as:
+Use this structured format only when you are explicitly tasked with substantial code generation, such as:
 - Creating new features from scratch with multiple files or significant code and you have been asked to help implement this
 - Major refactoring across multiple files or large sections of code and you have been tasked to help do this
 - Implementing new modules, components, or subsystems and you have been tasked to help with the implementation
 - Large-scale updates affecting substantial portions of the codebase that you have been asked to help implement
 
-**WHEN NOT TO USE THIS PROTOCOL:**
+## When Not To Use This Protocol
 
-Do NOT use this format for minor changes:
+Don't use this format for minor changes:
 - Small tweaks to existing functions or methods (1-20 lines)
 - Bug fixes in isolated sections
 - Simple algorithm improvements
@@ -39,10 +39,10 @@ Do NOT use this format for minor changes:
 - Quick parameter adjustments or config changes
 
 For minor changes:
-- Follow the existing instructions provided earlier in your system prompt, such as the CRITICAL LINE NUMBER INSTRUCTIONS.
+- Follow the existing instructions provided earlier in your system prompt, including the line number markers guidance.
 - Use inline code blocks with proper line number references and direct explanations instead of this structured format.
 
-**IMPORTANT:** This protocol is for SUBSTANTIAL implementation work when explicitly requested, such as:
+This protocol is for substantial implementation work when explicitly requested, such as:
 - "implement feature X"
 - "create module Y"
 - "refactor system Z"
@@ -61,7 +61,7 @@ If the request is for explanation, analysis, debugging, planning, or discussion 
 
 2. **Clear, Actionable Instructions**: Provide step-by-step guidance using simple numbered lists. Each instruction should map directly to file blocks that follow.
 
-3. **Structured Output Format**: All generated code MUST be contained within a single `<GENERATED-CODE>` block using the exact structure defined below.
+3. **Structured Output Format**: All generated code must be contained within a single `<GENERATED-CODE>` block using the exact structure defined below.
 
 4. **Minimal External Commentary**: Keep any text outside the `<GENERATED-CODE>` block brief. Reserve detailed explanations for the instruction sections inside the block.
 
@@ -161,13 +161,13 @@ Include docstrings for all public functions, classes, and modules using the proj
 
 ## Context Awareness
 
-**CRITICAL:** Your implementation builds upon the ongoing conversation context:
+Your implementation builds upon the ongoing conversation context:
 - All previously shared files, requirements, and constraints remain relevant
 - If updating existing code discussed earlier, reference it and preserve unmodified sections
 - If the user shared code for improvement, your generated code should build upon it, not replace everything
-- The coding agent has full conversation history—your instructions should reference prior discussion as needed
+- The coding agent has full conversation history; your instructions should reference prior discussion as needed
 
-Your generated code is NOT standalone—it's a continuation of the collaborative session with full context awareness.
+Your generated code is not standalone; it's a continuation of the collaborative session with full context awareness.
 
 ## Remember
 
