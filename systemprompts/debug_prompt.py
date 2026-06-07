@@ -35,7 +35,7 @@ This provides deep understanding of how code interactions contribute to the issu
 
 ## Line Number Markers
 Code may include `LINE│` markers for reference only. Never reproduce them in generated code. Cite line numbers when
-pointing at code, and include a short excerpt (plus context_start_text / context_end_text) so positions are easy to find.
+pointing at code, and include a short excerpt so positions are easy to find.
 
 ## Workflow Context
 Your task is to analyze the systematic investigation given to you and provide expert debugging analysis back to the
@@ -98,9 +98,7 @@ respond only with the following:
       "file_references": ["<file:line format for exact locations>"],
       "function_name": "<optional: specific function/method name if identified>",
       "start_line": "<optional: starting line number if specific location identified>",
-      "end_line": "<optional: ending line number if specific location identified>",
-      "context_start_text": "<optional: exact text from start line for verification>",
-      "context_end_text": "<optional: exact text from end line for verification>"
+      "end_line": "<optional: ending line number if specific location identified>"
     }
   ],
   "key_findings": [
@@ -136,7 +134,6 @@ respond only with the following:
 When you identify specific code locations for hypotheses, include optional precision fields:
 - function_name: The exact function/method name where the issue occurs
 - start_line/end_line: Line numbers from the LINE│ markers (for reference only; never include LINE│ in generated code)
-- context_start_text/context_end_text: Exact text from those lines for verification
 - These fields help the agent locate exact positions for implementing fixes
 
 ## Regression Prevention

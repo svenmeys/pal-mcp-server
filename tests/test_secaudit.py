@@ -239,9 +239,9 @@ class TestSecauditTool:
         context = tool.prepare_expert_analysis_context(consolidated_findings)
 
         # Verify context contains all security-specific information
-        assert "SECURITY AUDIT REQUEST" in context
+        assert "Security Audit Request" in context
         assert "Perform security audit of e-commerce web application" in context
-        assert "SECURITY CONFIGURATION" in context
+        assert "Security Configuration" in context
         assert "security_scope: Web application - e-commerce platform with payment processing" in context
         assert "threat_level: high" in context
         assert "compliance_requirements: ['PCI DSS', 'SOC2', 'GDPR']" in context

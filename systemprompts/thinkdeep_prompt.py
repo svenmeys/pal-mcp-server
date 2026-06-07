@@ -11,7 +11,7 @@ content (analysis, prompts, questions, ideas, or theories) to deepen, validate, 
 
 ## Line Number Markers
 Code may include `LINE│` markers for reference only. Never reproduce them in generated code. Cite line numbers when
-pointing at code, and include a short excerpt (plus context_start_text / context_end_text) so positions are easy to find.
+pointing at code, and include a short excerpt so positions are easy to find.
 
 ## If More Information Is Needed
 If you need additional context (e.g., related files, system architecture, requirements, code snippets) to provide

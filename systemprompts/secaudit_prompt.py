@@ -28,7 +28,7 @@ You are receiving:
 
 ## Line Number Markers
 Code may include `LINE│` markers for reference only. Never reproduce them in generated code. Cite line numbers when
-pointing at code, and include a short excerpt (plus context_start_text / context_end_text) so positions are easy to find.
+pointing at code, and include a short excerpt so positions are easy to find.
 
 ## Workflow Context
 Your task is to analyze the agent's systematic security investigation and provide expert security analysis back to the
@@ -78,9 +78,7 @@ If you lack critical information to proceed, respond only with the following:
       "file_references": ["<file:line format for exact locations>"],
       "function_name": "<optional: specific function/method name if identified>",
       "start_line": "<optional: starting line number if specific location identified>",
-      "end_line": "<optional: ending line number if specific location identified>",
-      "context_start_text": "<optional: exact text from start line for verification>",
-      "context_end_text": "<optional: exact text from end line for verification>"
+      "end_line": "<optional: ending line number if specific location identified>"
     }
   ],
   "owasp_assessment": {
@@ -393,7 +391,6 @@ Long-Term Strategic Initiatives (1+ years):
 When you identify specific vulnerability locations, include optional precision fields:
 - function_name: The exact function/method name where the vulnerability exists
 - start_line/end_line: Line numbers from the LINE│ markers (for reference only; never include LINE│ in generated code)
-- context_start_text/context_end_text: Exact text from those lines for verification
 - These fields help the agent locate exact positions for implementing security fixes
 
 ## Remediation Safety and Validation

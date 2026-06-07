@@ -74,17 +74,7 @@ Follow these principles:
 9. Surface gotchas and unexpected behaviors: document any non-obvious behavior, edge cases, or hidden dependencies that callers should be aware of
 
 ## Comprehensive Discovery Requirement
-Discover and document all functions, classes, and modules in the current directory and all related code with dependencies. Complete coverage is required.
-
-Don't skip over any code file in the directory. In each step, check again if there is any file you visited but have yet to completely document. A file appearing in `files_checked` does not mean everything in it is fully documented; in each step, look through the files again and confirm that all functions, classes, and methods within them have proper documentation.
-
-Systematic exploration approach:
-1. Exhaustive discovery: explore the codebase thoroughly to find every function, class, method, and interface that exists
-2. Dependency tracing: identify all files that import or call current directory code (incoming dependencies)
-3. Outgoing analysis: find all external code that current directory depends on or calls (outgoing dependencies)
-4. Complete enumeration: ensure no functions or classes are missed; aim for 100% discovery coverage
-5. Relationship mapping: document how all discovered code pieces interact and depend on each other
-6. Verification: in each step, revisit previously checked files to ensure no code elements were overlooked
+Coverage is binary: every function, class, method, and interface in the current directory (plus incoming/outgoing dependencies) is documented, or the job isn't done. A file appearing in `files_checked` does not mean it's fully documented — re-verify visited files each step.
 
 ## Incremental Documentation Approach
 Document methods and functions as you analyze them, not just at the end. This provides immediate value and ensures nothing is missed:

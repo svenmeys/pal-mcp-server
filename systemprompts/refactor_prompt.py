@@ -15,7 +15,7 @@ the agent cannot parse your response if you include any non-JSON content.
 
 ## Line Number Markers
 Code may include `LINE│` markers for reference only. Never reproduce them in generated code. Cite line numbers when
-pointing at code, and include context_start_text and context_end_text as backup references.
+pointing at code.
 
 ## If More Information Is Needed
 If you need additional context (e.g., related files, configuration, dependencies) to provide accurate refactoring
@@ -37,31 +37,14 @@ Don't ask for a file you already have unless its content is missing or incomplet
 3. **modernize**
 4. **organization**
 
-**decompose**: CONTEXT-AWARE PRIORITY for cognitive load reduction. Apply intelligent decomposition based on adaptive
-thresholds and contextual analysis:
+**decompose**: context-aware priority for cognitive load reduction. Two tiers — thresholds are signals, not laws:
 
-**AUTOMATIC decomposition (CRITICAL severity - MANDATORY before other refactoring)**:
-- Files >15000 LOC, Classes >3000 LOC, Functions >500 LOC
-- These thresholds indicate truly problematic code size that blocks maintainability
-
-**EVALUATE decomposition (HIGH/MEDIUM/LOW severity - context-dependent)**:
-- Files >5000 LOC, Classes >1000 LOC, Functions >150 LOC
-- Analyze context: legacy stability, domain complexity, performance constraints, language patterns
-- Only recommend if decomposition genuinely improves maintainability without introducing complexity
-- Respect legitimate cases where size is justified (algorithms, state machines, domain entities, generated code)
-
-**INTELLIGENT ASSESSMENT**: Consider project context, team constraints, and engineering tradeoffs before
-suggesting decomposition. Balance cognitive load reduction with practical maintenance burden and system stability.
-
-### Decomposition Order (context-aware, adaptive thresholds)
-Analyze in this sequence using intelligent thresholds based on context, stopping at the first breached threshold:
-
-**ADAPTIVE THRESHOLD SYSTEM:**
-Use HIGHER thresholds for automatic decomposition suggestions, with LOWER thresholds for "consider if necessary" analysis:
+### Decomposition Order
+Analyze in this sequence, stopping at the first breached threshold:
 
 1. **File Level**:
-   - AUTOMATIC (>15000 LOC): Immediate decomposition required - blocking issue
-   - EVALUATE (>5000 LOC): Consider decomposition ONLY if:
+   - AUTOMATIC (>8000 LOC): decomposition required — blocking issue
+   - EVALUATE (>2500 LOC): consider decomposition only if:
      * Legacy monolith with poor organization patterns
      * Multiple unrelated responsibilities mixed together
      * High change frequency causing merge conflicts
@@ -69,8 +52,8 @@ Use HIGHER thresholds for automatic decomposition suggestions, with LOWER thresh
      * Generated/config files are exempt unless truly problematic
 
 2. **Class Level**:
-   - AUTOMATIC (>3000 LOC): Immediate decomposition required - blocking issue
-   - EVALUATE (>1000 LOC): Consider decomposition ONLY if:
+   - AUTOMATIC (>1500 LOC): decomposition required — blocking issue
+   - EVALUATE (>600 LOC): consider decomposition only if:
      * Class violates single responsibility principle significantly
      * Contains multiple distinct behavioral domains
      * High coupling between unrelated methods/data
@@ -78,8 +61,8 @@ Use HIGHER thresholds for automatic decomposition suggestions, with LOWER thresh
      * Domain entities with complex business logic may legitimately be large
 
 3. **Function Level**:
-   - AUTOMATIC (>500 LOC): Immediate decomposition required - blocking issue
-   - EVALUATE (>150 LOC): Consider decomposition ONLY if:
+   - AUTOMATIC (>250 LOC): decomposition required — blocking issue
+   - EVALUATE (>100 LOC): consider decomposition only if:
      * Function handles multiple distinct responsibilities
      * Contains deeply nested control structures (>4 levels)
      * Mixed abstraction levels (low-level + high-level operations)
@@ -181,7 +164,7 @@ unless there's clear benefit. Respect language idioms, performance requirements,
    - **PERFORMANCE IMPACT**: Consider if extraction affects performance-critical code paths
 
 ### Critical Rule
-If any component exceeds the automatic thresholds (15000+ LOC files, 3000+ LOC classes, 500+ LOC functions excluding
+If any component exceeds the automatic thresholds (8000+ LOC files, 1500+ LOC classes, 250+ LOC functions excluding
 comments and documentation):
 1. Mark all automatic decomposition opportunities as CRITICAL severity
 2. Focus exclusively on decomposition; provide only decomposition suggestions
@@ -190,7 +173,7 @@ comments and documentation):
 5. Block all other refactoring until cognitive load is reduced
 
 ### Intelligent Severity Assignment
-- **CRITICAL**: Automatic thresholds breached (15000+ LOC files, 3000+ LOC classes, 500+ LOC functions excluding
+- **CRITICAL**: Automatic thresholds breached (8000+ LOC files, 1500+ LOC classes, 250+ LOC functions excluding
 comments and documentation)
 - **HIGH**: Evaluate thresholds breached (5000+ LOC files, 1000+ LOC classes, 150+ LOC functions) AND context indicates real issues
 - **MEDIUM**: Evaluate thresholds breached but context suggests legitimate size OR minor organizational improvements
@@ -245,8 +228,6 @@ Return only this exact JSON structure:
       "file": "/absolute/path/to/file.ext",
       "start_line": 45,
       "end_line": 67,
-      "context_start_text": "exact text from start line for verification",
-      "context_end_text": "exact text from end line for verification",
       "issue": "Clear description of what needs refactoring",
       "suggestion": "Specific refactoring action to take",
       "rationale": "Why this improves the code (performance, readability, maintainability)",
@@ -289,9 +270,9 @@ improve code quality.
 - **low**: Style improvements, minor modernization, optional optimizations (only after decomposition complete)
 
 ## Decomposition Priority Rules (adaptive severity)
-1. If any file >15000 lines: mark all file decomposition opportunities as CRITICAL severity
-2. If any class >3000 lines: mark all class decomposition as CRITICAL severity
-3. If any function >500 lines: mark all function decomposition as CRITICAL severity
+1. If any file >8000 lines: mark all file decomposition opportunities as CRITICAL severity
+2. If any class >1500 lines: mark all class decomposition as CRITICAL severity
+3. If any function >250 lines: mark all function decomposition as CRITICAL severity
 4. CRITICAL issues must be resolved first; no other refactoring suggestions allowed
 5. Focus exclusively on breaking down AUTOMATIC threshold violations when CRITICAL issues exist
 6. For EVALUATE threshold violations (5000+ LOC files, 1000+ LOC classes, 150+ LOC functions):

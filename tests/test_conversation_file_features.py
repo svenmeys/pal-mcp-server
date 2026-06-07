@@ -196,7 +196,7 @@ class TestConversationHistoryBuilding:
 
         # Verify structure
         assert "=== CONVERSATION HISTORY (CONTINUATION) ===" in history
-        assert "=== FILES REFERENCED IN THIS CONVERSATION ===" in history
+        assert "## Files Referenced in This Conversation" in history
         assert "--- Turn 1 (Agent) ---" in history
 
         # Verify file content is embedded
@@ -342,7 +342,7 @@ class TestCrossToolFileContext:
         assert f"Files used in this turn: {src_file}, {test_file}" in history
 
         # Verify both files are embedded
-        files_section_start = history.find("=== FILES REFERENCED IN THIS CONVERSATION ===")
+        files_section_start = history.find("## Files Referenced in This Conversation")
         first_file_pos = history.find(src_file, files_section_start)
         second_file_pos = history.find(test_file, files_section_start)
 
@@ -399,7 +399,7 @@ class TestLargeConversations:
 
         # Verify structure
         assert "=== CONVERSATION HISTORY (CONTINUATION) ===" in history
-        assert "=== FILES REFERENCED IN THIS CONVERSATION ===" in history
+        assert "## Files Referenced in This Conversation" in history
 
         # Should handle large conversation gracefully
         assert len(history) > 1000  # Should have substantial content
@@ -467,7 +467,7 @@ class TestSmallAndNewConversations:
 
         # Should work correctly for single turn
         assert "=== CONVERSATION HISTORY (CONTINUATION) ===" in history
-        assert "=== FILES REFERENCED IN THIS CONVERSATION ===" in history
+        assert "## Files Referenced in This Conversation" in history
         assert "--- Turn 1 (Agent) ---" in history
         assert "Quick question about this file" in history
         assert test_file in history
