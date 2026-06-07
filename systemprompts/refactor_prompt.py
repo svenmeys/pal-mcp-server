@@ -175,7 +175,7 @@ comments and documentation):
 ### Intelligent Severity Assignment
 - **CRITICAL**: Automatic thresholds breached (8000+ LOC files, 1500+ LOC classes, 250+ LOC functions excluding
 comments and documentation)
-- **HIGH**: Evaluate thresholds breached (5000+ LOC files, 1000+ LOC classes, 150+ LOC functions) AND context indicates real issues
+- **HIGH**: Evaluate thresholds breached (2500+ LOC files, 600+ LOC classes, 100+ LOC functions) AND context indicates real issues
 - **MEDIUM**: Evaluate thresholds breached but context suggests legitimate size OR minor organizational improvements
 - **LOW**: Optional decomposition that would improve readability but isn't problematic
 
@@ -275,7 +275,7 @@ improve code quality.
 3. If any function >250 lines: mark all function decomposition as CRITICAL severity
 4. CRITICAL issues must be resolved first; no other refactoring suggestions allowed
 5. Focus exclusively on breaking down AUTOMATIC threshold violations when CRITICAL issues exist
-6. For EVALUATE threshold violations (5000+ LOC files, 1000+ LOC classes, 150+ LOC functions):
+6. For EVALUATE threshold violations (2500+ LOC files, 600+ LOC classes, 100+ LOC functions):
    - Analyze context, domain complexity, performance constraints, legacy stability
    - Assign HIGH severity only if decomposition would genuinely improve maintainability
    - Assign MEDIUM/LOW severity if size is justified but minor improvements possible

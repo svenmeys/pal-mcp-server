@@ -65,10 +65,10 @@ This results in Claude first performing its own expert analysis, encouraging it 
 **1. `decompose` (CRITICAL PRIORITY)** - Context-aware decomposition with adaptive thresholds:
 
 **AUTOMATIC decomposition** (CRITICAL severity - blocks all other refactoring):
-- Files >15,000 LOC, Classes >3,000 LOC, Functions >500 LOC
+- Files >8,000 LOC, Classes >1,500 LOC, Functions >250 LOC
 
 **EVALUATE decomposition** (contextual severity - intelligent assessment):
-- Files >5,000 LOC, Classes >1,000 LOC, Functions >150 LOC
+- Files >2,500 LOC, Classes >600 LOC, Functions >100 LOC
 - Only recommends if genuinely improves maintainability
 - Respects legacy stability, domain complexity, performance constraints
 - Considers legitimate cases where size is justified (algorithms, state machines, generated code)
