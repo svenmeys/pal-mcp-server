@@ -598,7 +598,7 @@ of the evidence, even when it strongly points in one direction.""",
                     model_context=model_context,
                 )
                 if file_content:
-                    prompt = f"{prompt}\n\n=== CONTEXT FILES ===\n{file_content}\n=== END CONTEXT ==="
+                    prompt = f"{prompt}\n\n## Context Files\n{file_content}"
 
             # Get stance-specific system prompt
             stance = model_config.get("stance", "neutral")

@@ -267,35 +267,34 @@ class DebugIssueTool(WorkflowTool):
     def prepare_expert_analysis_context(self, consolidated_findings) -> str:
         """Prepare context for external model call matching original debug tool format."""
         context_parts = [
-            f"=== ISSUE DESCRIPTION ===\n{self.initial_issue or 'Investigation initiated'}\n=== END DESCRIPTION ==="
+            f"## Issue Description\n{self.initial_issue or 'Investigation initiated'}"
         ]
 
         # Add special note if confidence is almost_certain
         if consolidated_findings.confidence == "almost_certain":
             context_parts.append(
-                "\n=== IMPORTANT: ALMOST CERTAIN CONFIDENCE ===\n"
+                "\n## Important: Almost Certain Confidence\n"
                 "The agent has reached 'almost_certain' confidence but has NOT confirmed the bug with 100% certainty. "
                 "Your role is to:\n"
                 "1. Validate the agent's hypothesis and investigation\n"
                 "2. Identify any missing evidence or overlooked aspects\n"
                 "3. Provide additional insights that could confirm or refute the hypothesis\n"
                 "4. Help finalize the root cause analysis with complete certainty\n"
-                "=== END IMPORTANT ==="
             )
 
         # Add investigation summary
         investigation_summary = self._build_investigation_summary(consolidated_findings)
-        context_parts.append(f"\n=== AGENT'S INVESTIGATION FINDINGS ===\n{investigation_summary}\n=== END FINDINGS ===")
+        context_parts.append(f"\n## Agent's Investigation Findings\n{investigation_summary}")
 
         # Add error context if available
         error_context = self._extract_error_context(consolidated_findings)
         if error_context:
-            context_parts.append(f"\n=== ERROR CONTEXT/STACK TRACE ===\n{error_context}\n=== END CONTEXT ===")
+            context_parts.append(f"\n## Error Context/Stack Trace\n{error_context}")
 
         # Add relevant methods/functions if available
         if consolidated_findings.relevant_context:
             methods_text = "\n".join(f"- {method}" for method in consolidated_findings.relevant_context)
-            context_parts.append(f"\n=== RELEVANT METHODS/FUNCTIONS ===\n{methods_text}\n=== END METHODS ===")
+            context_parts.append(f"\n## Relevant Methods/Functions\n{methods_text}")
 
         # Add hypothesis evolution if available
         if consolidated_findings.hypotheses:
@@ -303,13 +302,13 @@ class DebugIssueTool(WorkflowTool):
                 f"Step {h['step']} ({h['confidence']} confidence): {h['hypothesis']}"
                 for h in consolidated_findings.hypotheses
             )
-            context_parts.append(f"\n=== HYPOTHESIS EVOLUTION ===\n{hypotheses_text}\n=== END HYPOTHESES ===")
+            context_parts.append(f"\n## Hypothesis Evolution\n{hypotheses_text}")
 
         # Add images if available
         if consolidated_findings.images:
             images_text = "\n".join(f"- {img}" for img in consolidated_findings.images)
             context_parts.append(
-                f"\n=== VISUAL DEBUGGING INFORMATION ===\n{images_text}\n=== END VISUAL INFORMATION ==="
+                f"\n## Visual Debugging Information\n{images_text}"
             )
 
         # Add file content if we have relevant files
@@ -319,7 +318,7 @@ class DebugIssueTool(WorkflowTool):
             )
             if file_content:
                 context_parts.append(
-                    f"\n=== ESSENTIAL FILES FOR DEBUGGING ===\n{file_content}\n=== END ESSENTIAL FILES ==="
+                    f"\n## Essential Files For Debugging\n{file_content}"
                 )
 
         return "\n".join(context_parts)
@@ -327,13 +326,13 @@ class DebugIssueTool(WorkflowTool):
     def _build_investigation_summary(self, consolidated_findings) -> str:
         """Prepare a comprehensive summary of the investigation."""
         summary_parts = [
-            "=== SYSTEMATIC INVESTIGATION SUMMARY ===",
+            "## Systematic Investigation Summary",
             f"Total steps: {len(consolidated_findings.findings)}",
             f"Files examined: {len(consolidated_findings.files_checked)}",
             f"Relevant files identified: {len(consolidated_findings.relevant_files)}",
             f"Methods/functions involved: {len(consolidated_findings.relevant_context)}",
             "",
-            "=== INVESTIGATION PROGRESSION ===",
+            "## Investigation Progression",
         ]
 
         for finding in consolidated_findings.findings:

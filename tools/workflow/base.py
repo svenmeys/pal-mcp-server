@@ -262,17 +262,17 @@ class WorkflowTool(BaseTool, BaseWorkflowMixin):
         Returns:
             Formatted context string for expert analysis
         """
-        context_parts = [f"=== ISSUE DESCRIPTION ===\n{initial_description}\n=== END DESCRIPTION ==="]
+        context_parts = [f"## Issue Description\n{initial_description}"]
 
         # Add work progression
         if consolidated_findings.findings:
             findings_text = "\n".join(consolidated_findings.findings)
-            context_parts.append(f"\n=== INVESTIGATION FINDINGS ===\n{findings_text}\n=== END FINDINGS ===")
+            context_parts.append(f"\n## Investigation Findings\n{findings_text}")
 
         # Add relevant methods if available
         if consolidated_findings.relevant_context:
             methods_text = "\n".join(f"- {method}" for method in consolidated_findings.relevant_context)
-            context_parts.append(f"\n=== RELEVANT METHODS/FUNCTIONS ===\n{methods_text}\n=== END METHODS ===")
+            context_parts.append(f"\n## Relevant Methods/Functions\n{methods_text}")
 
         # Add hypothesis evolution if available
         if consolidated_findings.hypotheses:
@@ -280,7 +280,7 @@ class WorkflowTool(BaseTool, BaseWorkflowMixin):
                 f"Step {h['step']} ({h['confidence']} confidence): {h['hypothesis']}"
                 for h in consolidated_findings.hypotheses
             )
-            context_parts.append(f"\n=== HYPOTHESIS EVOLUTION ===\n{hypotheses_text}\n=== END HYPOTHESES ===")
+            context_parts.append(f"\n## Hypothesis Evolution\n{hypotheses_text}")
 
         # Add issues found if available
         if consolidated_findings.issues_found:
@@ -288,13 +288,13 @@ class WorkflowTool(BaseTool, BaseWorkflowMixin):
                 f"[{issue.get('severity', 'unknown').upper()}] {issue.get('description', 'No description')}"
                 for issue in consolidated_findings.issues_found
             )
-            context_parts.append(f"\n=== ISSUES IDENTIFIED ===\n{issues_text}\n=== END ISSUES ===")
+            context_parts.append(f"\n## Issues Identified\n{issues_text}")
 
         # Add tool-specific sections
         if context_sections:
             for section_title, section_content in context_sections.items():
                 context_parts.append(
-                    f"\n=== {section_title.upper()} ===\n{section_content}\n=== END {section_title.upper()} ==="
+                    f"\n## {section_title.upper()}\n{section_content}"
                 )
 
         return "\n".join(context_parts)

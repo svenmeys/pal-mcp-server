@@ -820,7 +820,7 @@ def build_conversation_history(context: ThreadContext, model_context=None, read_
         if files_to_include:
             history_parts.extend(
                 [
-                    "=== FILES REFERENCED IN THIS CONVERSATION ===",
+                    "## Files Referenced in This Conversation",
                     "The following files have been shared and analyzed during our conversation.",
                     (
                         ""
@@ -905,7 +905,7 @@ def build_conversation_history(context: ThreadContext, model_context=None, read_
         history_parts.extend(
             [
                 "",
-                "=== END REFERENCED FILES ===",
+                "",
                 "",
             ]
         )

@@ -206,7 +206,7 @@ class TestConversationMemory:
 
         # Test file tracking
         # Check that the new file embedding section is included
-        assert "=== FILES REFERENCED IN THIS CONVERSATION ===" in history
+        assert "## Files Referenced in This Conversation" in history
         assert "The following files have been shared and analyzed during our conversation." in history
 
         # Check that file context from previous turns is included (now shows files used per turn)
@@ -756,7 +756,7 @@ class TestConversationFlow:
 
             # Verify the history was built successfully
             assert "=== CONVERSATION HISTORY" in history
-            assert "=== FILES REFERENCED IN THIS CONVERSATION ===" in history
+            assert "## Files Referenced in This Conversation" in history
 
             # The small file should be included, but large file might be truncated
             # At minimum, verify no crashes and history is generated

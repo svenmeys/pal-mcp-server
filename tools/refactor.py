@@ -332,69 +332,69 @@ class RefactorTool(WorkflowTool):
     def prepare_expert_analysis_context(self, consolidated_findings) -> str:
         """Prepare context for external model call for final refactoring validation."""
         context_parts = [
-            f"=== REFACTORING ANALYSIS REQUEST ===\\n{self.initial_request or 'Refactoring workflow initiated'}\\n=== END REQUEST ==="
+            f"## Refactoring Analysis Request\n{self.initial_request or 'Refactoring workflow initiated'}"
         ]
 
         # Add investigation summary
         investigation_summary = self._build_refactoring_summary(consolidated_findings)
         context_parts.append(
-            f"\\n=== AGENT'S REFACTORING INVESTIGATION ===\\n{investigation_summary}\\n=== END INVESTIGATION ==="
+            f"\n## Agent's Refactoring Investigation\n{investigation_summary}"
         )
 
         # Add refactor configuration context if available
         if self.refactor_config:
-            config_text = "\\n".join(f"- {key}: {value}" for key, value in self.refactor_config.items() if value)
-            context_parts.append(f"\\n=== REFACTOR CONFIGURATION ===\\n{config_text}\\n=== END CONFIGURATION ===")
+            config_text = "\n".join(f"- {key}: {value}" for key, value in self.refactor_config.items() if value)
+            context_parts.append(f"\n## Refactor Configuration\n{config_text}")
 
         # Add relevant code elements if available
         if consolidated_findings.relevant_context:
-            methods_text = "\\n".join(f"- {method}" for method in consolidated_findings.relevant_context)
-            context_parts.append(f"\\n=== RELEVANT CODE ELEMENTS ===\\n{methods_text}\\n=== END CODE ELEMENTS ===")
+            methods_text = "\n".join(f"- {method}" for method in consolidated_findings.relevant_context)
+            context_parts.append(f"\n## Relevant Code Elements\n{methods_text}")
 
         # Add refactoring opportunities found if available
         if consolidated_findings.issues_found:
-            opportunities_text = "\\n".join(
+            opportunities_text = "\n".join(
                 f"[{issue.get('severity', 'unknown').upper()}] {issue.get('type', 'unknown').upper()}: {issue.get('description', 'No description')}"
                 for issue in consolidated_findings.issues_found
             )
             context_parts.append(
-                f"\\n=== REFACTORING OPPORTUNITIES ===\\n{opportunities_text}\\n=== END OPPORTUNITIES ==="
+                f"\n## Refactoring Opportunities\n{opportunities_text}"
             )
 
         # Add assessment evolution if available
         if consolidated_findings.hypotheses:
-            assessments_text = "\\n".join(
+            assessments_text = "\n".join(
                 f"Step {h['step']} ({h['confidence']} confidence): {h['hypothesis']}"
                 for h in consolidated_findings.hypotheses
             )
-            context_parts.append(f"\\n=== ASSESSMENT EVOLUTION ===\\n{assessments_text}\\n=== END ASSESSMENTS ===")
+            context_parts.append(f"\n## Assessment Evolution\n{assessments_text}")
 
         # Add images if available
         if consolidated_findings.images:
-            images_text = "\\n".join(f"- {img}" for img in consolidated_findings.images)
+            images_text = "\n".join(f"- {img}" for img in consolidated_findings.images)
             context_parts.append(
-                f"\\n=== VISUAL REFACTORING INFORMATION ===\\n{images_text}\\n=== END VISUAL INFORMATION ==="
+                f"\n## Visual Refactoring Information\n{images_text}"
             )
 
-        return "\\n".join(context_parts)
+        return "\n".join(context_parts)
 
     def _build_refactoring_summary(self, consolidated_findings) -> str:
         """Prepare a comprehensive summary of the refactoring investigation."""
         summary_parts = [
-            "=== SYSTEMATIC REFACTORING INVESTIGATION SUMMARY ===",
+            "## Systematic Refactoring Investigation Summary",
             f"Total steps: {len(consolidated_findings.findings)}",
             f"Files examined: {len(consolidated_findings.files_checked)}",
             f"Relevant files identified: {len(consolidated_findings.relevant_files)}",
             f"Code elements analyzed: {len(consolidated_findings.relevant_context)}",
             f"Refactoring opportunities identified: {len(consolidated_findings.issues_found)}",
             "",
-            "=== INVESTIGATION PROGRESSION ===",
+            "## Investigation Progression",
         ]
 
         for finding in consolidated_findings.findings:
             summary_parts.append(finding)
 
-        return "\\n".join(summary_parts)
+        return "\n".join(summary_parts)
 
     def should_include_files_in_expert_prompt(self) -> bool:
         """Include files in expert analysis for comprehensive refactoring validation."""
@@ -558,16 +558,16 @@ class RefactorTool(WorkflowTool):
         elif confidence in ["exploring", "incomplete"]:
             next_steps = (
                 f"STOP! Do NOT call {self.get_name()} again yet. Based on your findings, you've identified areas that need "
-                f"deeper refactoring analysis. MANDATORY ACTIONS before calling {self.get_name()} step {step_number + 1}:\\n"
-                + "\\n".join(f"{i+1}. {action}" for i, action in enumerate(required_actions))
-                + f"\\n\\nOnly call {self.get_name()} again with step_number: {step_number + 1} AFTER "
+                f"deeper refactoring analysis. MANDATORY ACTIONS before calling {self.get_name()} step {step_number + 1}:\n"
+                + "\n".join(f"{i+1}. {action}" for i, action in enumerate(required_actions))
+                + f"\n\nOnly call {self.get_name()} again with step_number: {step_number + 1} AFTER "
                 + "completing these refactoring analysis tasks."
             )
         elif confidence == "partial":
             next_steps = (
-                f"WAIT! Your refactoring analysis needs final verification. DO NOT call {self.get_name()} immediately. REQUIRED ACTIONS:\\n"
-                + "\\n".join(f"{i+1}. {action}" for i, action in enumerate(required_actions))
-                + f"\\n\\nREMEMBER: Ensure you have identified all significant refactoring opportunities across all types and "
+                f"WAIT! Your refactoring analysis needs final verification. DO NOT call {self.get_name()} immediately. REQUIRED ACTIONS:\n"
+                + "\n".join(f"{i+1}. {action}" for i, action in enumerate(required_actions))
+                + f"\n\nREMEMBER: Ensure you have identified all significant refactoring opportunities across all types and "
                 f"verified the completeness of your analysis. Document opportunities with specific file references and "
                 f"line numbers where applicable, then call {self.get_name()} with step_number: {step_number + 1}."
             )

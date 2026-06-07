@@ -254,36 +254,36 @@ class SecauditTool(WorkflowTool):
         compliance requirements, and systematic findings for expert validation.
         """
         context_parts = [
-            f"=== SECURITY AUDIT REQUEST ===\n{self.initial_request or 'Security audit workflow initiated'}\n=== END REQUEST ==="
+            f"## Security Audit Request\n{self.initial_request or 'Security audit workflow initiated'}"
         ]
 
         # Add investigation summary
         investigation_summary = self._build_security_audit_summary(consolidated_findings)
         context_parts.append(
-            f"\n=== AGENT'S SECURITY INVESTIGATION ===\n{investigation_summary}\n=== END INVESTIGATION ==="
+            f"\n## Agent's Security Investigation\n{investigation_summary}"
         )
 
         # Add security configuration context if available
         if self.security_config:
             config_text = "\n".join(f"- {key}: {value}" for key, value in self.security_config.items() if value)
-            context_parts.append(f"\n=== SECURITY CONFIGURATION ===\n{config_text}\n=== END CONFIGURATION ===")
+            context_parts.append(f"\n## Security Configuration\n{config_text}")
 
         # Add relevant files if available
         if consolidated_findings.relevant_files:
             files_text = "\n".join(f"- {file}" for file in consolidated_findings.relevant_files)
-            context_parts.append(f"\n=== RELEVANT FILES ===\n{files_text}\n=== END FILES ===")
+            context_parts.append(f"\n## Relevant Files\n{files_text}")
 
         # Add relevant security elements if available
         if consolidated_findings.relevant_context:
             methods_text = "\n".join(f"- {method}" for method in consolidated_findings.relevant_context)
             context_parts.append(
-                f"\n=== SECURITY-CRITICAL CODE ELEMENTS ===\n{methods_text}\n=== END CODE ELEMENTS ==="
+                f"\n## Security-Critical Code Elements\n{methods_text}"
             )
 
         # Add security issues found if available
         if consolidated_findings.issues_found:
             issues_text = self._format_security_issues(consolidated_findings.issues_found)
-            context_parts.append(f"\n=== SECURITY ISSUES IDENTIFIED ===\n{issues_text}\n=== END ISSUES ===")
+            context_parts.append(f"\n## Security Issues Identified\n{issues_text}")
 
         # Add assessment evolution if available
         if consolidated_findings.hypotheses:
@@ -291,13 +291,13 @@ class SecauditTool(WorkflowTool):
                 f"Step {h['step']} ({h['confidence']} confidence): {h['hypothesis']}"
                 for h in consolidated_findings.hypotheses
             )
-            context_parts.append(f"\n=== ASSESSMENT EVOLUTION ===\n{assessments_text}\n=== END ASSESSMENTS ===")
+            context_parts.append(f"\n## Assessment Evolution\n{assessments_text}")
 
         # Add images if available
         if consolidated_findings.images:
             images_text = "\n".join(f"- {img}" for img in consolidated_findings.images)
             context_parts.append(
-                f"\n=== VISUAL SECURITY INFORMATION ===\n{images_text}\n=== END VISUAL INFORMATION ==="
+                f"\n## Visual Security Information\n{images_text}"
             )
 
         return "\n".join(context_parts)
@@ -334,14 +334,14 @@ class SecauditTool(WorkflowTool):
     def _build_security_audit_summary(self, consolidated_findings) -> str:
         """Prepare a comprehensive summary of the security audit investigation."""
         summary_parts = [
-            "=== SYSTEMATIC SECURITY AUDIT INVESTIGATION SUMMARY ===",
+            "## Systematic Security Audit Investigation Summary",
             f"Total steps: {len(consolidated_findings.findings)}",
             f"Files examined: {len(consolidated_findings.files_checked)}",
             f"Relevant files identified: {len(consolidated_findings.relevant_files)}",
             f"Security-critical elements analyzed: {len(consolidated_findings.relevant_context)}",
             f"Security issues identified: {len(consolidated_findings.issues_found)}",
             "",
-            "=== INVESTIGATION PROGRESSION ===",
+            "## Investigation Progression",
         ]
 
         for finding in consolidated_findings.findings:

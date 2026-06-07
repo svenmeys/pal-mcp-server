@@ -194,12 +194,12 @@ class BaseWorkflowMixin(ABC):
 
         # Default context preparation
         context_parts = [
-            f"=== {self.get_name().upper()} WORK SUMMARY ===",
+            f"## {self.get_name().upper()} Work Summary",
             f"Total steps: {len(consolidated_findings.findings)}",
             f"Files examined: {len(consolidated_findings.files_checked)}",
             f"Relevant files: {len(consolidated_findings.relevant_files)}",
             "",
-            "=== WORK PROGRESSION ===",
+            "## Work Progression",
         ]
 
         for finding in consolidated_findings.findings:
@@ -509,7 +509,7 @@ class BaseWorkflowMixin(ABC):
         Add file content to the expert context.
         Override this to customize how files are added to the context.
         """
-        return f"{expert_context}\n\n=== ESSENTIAL FILES ===\n{file_content}\n=== END ESSENTIAL FILES ==="
+        return f"{expert_context}\n\n## Essential Files\n{file_content}"
 
     # ================================================================================
     # Context-Aware File Embedding - Core Implementation
@@ -1498,14 +1498,14 @@ class BaseWorkflowMixin(ABC):
     def _prepare_work_summary(self) -> str:
         """Prepare a comprehensive summary of the work"""
         summary_parts = [
-            f"=== {self.get_name().upper()} WORK SUMMARY ===",
+            f"## {self.get_name().upper()} Work Summary",
             f"Total steps: {len(self.work_history)}",
             f"Files examined: {len(self.consolidated_findings.files_checked)}",
             f"Relevant files identified: {len(self.consolidated_findings.relevant_files)}",
             f"Methods/functions involved: {len(self.consolidated_findings.relevant_context)}",
             f"Issues found: {len(self.consolidated_findings.issues_found)}",
             "",
-            "=== WORK PROGRESSION ===",
+            "## Work Progression",
         ]
 
         for finding in self.consolidated_findings.findings:
@@ -1515,7 +1515,7 @@ class BaseWorkflowMixin(ABC):
             summary_parts.extend(
                 [
                     "",
-                    "=== HYPOTHESIS EVOLUTION ===",
+                    "## Hypothesis Evolution",
                 ]
             )
             for hyp in self.consolidated_findings.hypotheses:
@@ -1525,7 +1525,7 @@ class BaseWorkflowMixin(ABC):
             summary_parts.extend(
                 [
                     "",
-                    "=== ISSUES IDENTIFIED ===",
+                    "## Issues Identified",
                 ]
             )
             for issue in self.consolidated_findings.issues_found:

@@ -290,9 +290,9 @@ class CLinkTool(SimpleTool):
             if include_system_prompt and active_prompt:
                 sections.append(active_prompt)
             sections.append(guidance)
-            sections.append("=== USER REQUEST ===\n" + user_content)
+            sections.append("## User Request\n" + user_content)
             if file_section:
-                sections.append("=== FILE REFERENCES ===\n" + file_section)
+                sections.append("## File References\n" + file_section)
             sections.append("Provide your response below using your own CLI tools as needed:")
             return "\n\n".join(sections)
         finally:
